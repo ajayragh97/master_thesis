@@ -7,9 +7,40 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(Eigen3 REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
+find_package(tf2_ros  REQUIRED) 
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
+
+add_executable(clustering_node src/clustering.cpp src/helperfunctions.cpp)
+
+
+ament_target_dependencies(clustering_node
+                          rclcpp 
+                          sensor_msgs 
+                          geometry_msgs 
+                          std_msgs 
+                          nav_msgs 
+                          visualization_msgs
+                          tf2_ros)
+
+target_include_directories(clustering_node PRIVATE
+include 
+${EIGEN3_INCLUDE_DIR}
+)
+target_link_libraries(clustering_node Eigen3::Eigen)
+
+install(TARGETS clustering_node
+        DESTINATION lib/${PROJECT_NAME})
+
+install(DIRECTORY include/
+        DESTINATION include)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
