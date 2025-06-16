@@ -2,6 +2,8 @@
 #include <cmath>
 #include <vector>
 #include <limits>
+#include <numeric>
+#include <algorithm>
 #include <iostream> 
 #include <Eigen/Dense> 
 #include <Eigen/Eigenvalues> 
@@ -51,28 +53,23 @@ namespace helperfunctions
         std_msgs::msg::ColorRGBA color;
         color.a = alpha;
 
-        if (gaussian_id == -2) { // Your ID for noise clusters
-            color.r = 0.5f; // Grey for noise
+        if (gaussian_id == -2) 
+        { 
+            color.r = 0.5f; 
             color.g = 0.5f;
             color.b = 0.5f;
-        } else {
-            // Use absolute value of ID. If negative IDs (other than -2) are meaningful and distinct,
-            // you might need a different mapping to a positive float.
+        } 
+        else 
+        {
+
             float id_float_for_hue = static_cast<float>(std::abs(gaussian_id));
 
             // Calculate hue using the golden angle progression
             // Add a starting offset if you don't want ID 0 (or low IDs) to always be reddish.
             float hue = std::fmod(HUE_START_OFFSET + id_float_for_hue * GOLDEN_RATIO_CONJUGATE, 1.0f);
             
-            // Keep saturation and value high for vibrant colors
-            float saturation = 0.90f; // e.g., 0.7 to 1.0
-            float value = 0.95f;      // e.g., 0.7 to 1.0
-
-            // Optional: Add slight variation to S and V based on ID if pure hue isn't enough
-            // float s_variation = std::fmod(id_float_for_hue * 0.05f, 0.15f); // Small variation
-            // saturation = std::max(0.7f, std::min(1.0f, 0.85f + s_variation));
-            // float v_variation = std::fmod(id_float_for_hue * 0.03f, 0.1f);
-            // value = std::max(0.7f, std::min(1.0f, 0.9f + v_variation));
+            float saturation = 0.90f; 
+            float value = 0.95f;      
 
 
             color = hsvToRgb(hue, saturation, value, alpha);
@@ -162,12 +159,10 @@ namespace helperfunctions
         double angle_var_min        =   0.0087266463;
         double range_var            =   0.15;
         double elevation            =   0.0; // we only have 2d data
-        // const double MIN_Z_COVARIANCE_VALUE = 1e-12; 
+
         for(auto& point : cluster_data.points)
         {
             double azimuth_var      =   calculate_angle_accuracy(point.azimuth, angle_min, angle_max, angle_var_min, angle_var_max);
-            // std::cerr << "\nazimuth: " << point.azimuth << std::flush;
-            // std::cerr << "\nazimuth var: " << azimuth_var << std::flush;
             // double elevation_var=   calculate_angle_accuracy(point.elevation, angle_min, angle_max, angle_var_min, angle_var_max);
             double elevation_var    =   0.0;
 
@@ -200,17 +195,9 @@ namespace helperfunctions
             J                       <<  dx_dr, dx_dtheta, dx_dphi,
                                         dy_dr, dy_dtheta, dy_dphi, 
                                         dz_dr, dz_dtheta, dz_dphi;
-
-
-            
+          
             Eigen::Matrix3d covariance_cart;
             covariance_cart         =   J * covariance_sph * J.transpose();
-
-            // std::cerr << "\nPoint covariance matrix before: " << covariance_cart << std::flush;
-            // if (covariance_cart(2,2) < MIN_Z_COVARIANCE_VALUE)
-            // {
-            //     covariance_cart(2,2) = MIN_Z_COVARIANCE_VALUE;
-            // }
             covariance_cart(0,2) = 0.0; covariance_cart(2,0) = 0.0;
             covariance_cart(1,2) = 0.0; covariance_cart(2,1) = 0.0;
 
@@ -234,12 +221,29 @@ namespace helperfunctions
         // The columns of the matrix returned by eigenvectors() are the eigenvectors.
         // These eigenvectors form an orthonormal basis that represents the orientation
         // of the ellipsoid's principal axes in space.
-        // std::cerr << "\neigen vectors: \n" << std::flush;
-        // std::cerr << es.eigenvectors() << std::flush;
-        // std::cerr << "\neigen values: \n" << std::flush;
-        // std::cerr << es.eigenvalues() << std::flush;
-        Eigen::Matrix3d rotmat = es.eigenvectors();
+ 
+        Eigen::Vector3d eigenvalues = es.eigenvalues();
+        Eigen::Matrix3d eigenvectors = es.eigenvectors();
+        std::vector<int> p(3);
+        std::iota(p.begin(), p.end(), 0); // Fills p with 0, 1, 2
 
+        // Sort indices based on the values of the eigenvalues in descending order
+        // Eigenvalues are naturally returned in ascending order by SelfAdjointEigenSolver
+        std::sort(p.begin(), p.end(), [&](int i, int j)
+        {
+            return eigenvalues(i) > eigenvalues(j); // Sort descending
+        });
+
+        Eigen::Matrix3d rotmat;
+        rotmat.col(0) = eigenvectors.col(p[0]); // Major axis (largest eigenvalue)
+        rotmat.col(1) = eigenvectors.col(p[1]); // Middle axis
+        rotmat.col(2) = eigenvectors.col(p[2]); // Minor axis (smallest eigenvalue)
+
+
+        if(rotmat.determinant() < 0.0) // checking for improper rotation matrix
+        {
+            rotmat.col(2) *= -1.0;
+        }
 
         // Eigenvalue/Eigenvector order:.
         // The columns of the rotationMatrix correspond to the eigenvalues in the same order.
@@ -252,7 +256,11 @@ namespace helperfunctions
         gaussian.pose = pose;
 
         // including eigen values into the gaussian
-        gaussian.eigenvalues = es.eigenvalues();
+        Eigen::Vector3d sorted_eigenvalues;
+        sorted_eigenvalues(0) = eigenvalues(p[0]);
+        sorted_eigenvalues(1) = eigenvalues(p[1]);
+        sorted_eigenvalues(2) = eigenvalues(p[2]);
+        gaussian.eigenvalues = sorted_eigenvalues;
         
     }
 
@@ -270,8 +278,6 @@ namespace helperfunctions
             {
                 continue;
             }
-            
-            // auto cluster_points                         =   cluster_data.points;
 
             datastructures::Gaussian gaussian;
             gaussian.id         =   cluster_id;
@@ -280,11 +286,9 @@ namespace helperfunctions
             gaussian.intensity  =   0.0;
             gaussian.weight     =   0.0;
 
-            // std::cerr << "\nempty cov: " << cluster_data.points[0].cov << std::flush;
             // calculate the covariance of the point measurements
             calculate_covariance(entry.second);
             calculate_covariance_2d(entry.second);
-            // std::cerr << "\ncalculated cov: " << cluster_data.points[0].cov << std::flush;
 
             // calculate weights and centroid of cluster
             double rcs_sum      =   0.0;
@@ -361,23 +365,9 @@ namespace helperfunctions
                 mean_deviation_cov += (weight * outer_prod);
             }
 
-            
             gaussian.cov                   =    mean_deviation_cov + weighted_point_cov_sum;
-
             gaussian.cov_2d                =    mean_deviation_cov.block<2,2>(0, 0) + weighted_point_cov_sum_2d;
-
-            
-            compute_gaussian_pose(gaussian);
-            std::cerr << "\n<============================================>\n" << std::flush;
-            std::cerr << "\neigenvalues: \n" << gaussian.eigenvalues << std::flush;
-            std::cerr << "\neigenvector: \n" << gaussian.pose.block<3,3>(0,0) << std::flush;
-            std::cerr << "\nmean deviation cov: \n" << mean_deviation_cov << std::flush;
-            std::cerr << "\nweighted point cov: \n" << weighted_point_cov_sum << std::flush;
-            std::cerr << "\nCovariance matrix: \n" << gaussian.cov << std::flush;
-            std::cerr << "\n<============================================>\n" << std::flush;
-            
-            
-            
+            compute_gaussian_pose(gaussian);        
             gaussian_mixture[cluster_id]    =   gaussian;
             
         }
@@ -434,8 +424,8 @@ namespace helperfunctions
     void create_gaussian_ellipsoid_markers( const datastructures::GaussianMixture& gaussian_mixture, 
                                             visualization_msgs::msg::MarkerArray& marker_array, 
                                             const std_msgs::msg::Header& header,
-                                            float scale_factor, // Default to 2-sigma ellipse diameter
-                                            float min_scale    // Minimum diameter along any axis (1 cm)
+                                            float scale_factor, 
+                                            float min_scale    
                                         )
     {
         // Clear any existing markers in the array
@@ -443,12 +433,12 @@ namespace helperfunctions
         // Define a namespace for these markers
         std::string marker_namespace = "gaussian_mixture_ellipsoids";
 
-        // Define default color (e.g., semi-transparent green)
+        // Define default color 
         std_msgs::msg::ColorRGBA default_color;
         default_color.r = 0.0f;
         default_color.g = 1.0f;
         default_color.b = 0.0f;
-        default_color.a = 0.5f; // 50% opaque
+        default_color.a = 0.5f; 
 
         
 
@@ -458,8 +448,6 @@ namespace helperfunctions
             int gaussian_id = pair.first;
             const datastructures::Gaussian& gaussian = pair.second;
 
-            // std::cerr << "\ngaussian eigen values: " << gaussian.eigenvalues << std::flush;
-            // datastructures::Ellipse2D ellipse_params    =   calculate_ellipse(pair.second.cov_2d);
 
             if(gaussian_id != -2)
             {
@@ -467,23 +455,21 @@ namespace helperfunctions
                 visualization_msgs::msg::Marker marker;
 
                 // --- Set basic marker properties ---
-                marker.header = header; // Use the provided header
+                marker.header = header;
                 marker.ns = marker_namespace;
-                marker.id = gaussian_id; // Use the Gaussian's ID as the marker ID
+                marker.id = gaussian_id; 
                 marker.type = visualization_msgs::msg::Marker::SPHERE; 
                 marker.action = visualization_msgs::msg::Marker::ADD; 
 
                 // --- Set Pose (Position and Orientation) ---
-                // Position is the translation part of the pose matrix
                 marker.pose.position.x = gaussian.pose(0, 3);
                 marker.pose.position.y = gaussian.pose(1, 3);
                 marker.pose.position.z = gaussian.pose(2, 3);
 
-                // Orientation is the rotation part of the pose matrix (3x3)
                 Eigen::Matrix3d rotation_matrix = gaussian.pose.block<3, 3>(0, 0);
-
+                
                 Eigen::Quaterniond quaternion(rotation_matrix);
-                quaternion.normalize(); // Normalize the quaternion (good practice)
+                quaternion.normalize(); 
 
                 marker.pose.orientation.x = quaternion.x();
                 marker.pose.orientation.y = quaternion.y();
@@ -514,7 +500,7 @@ namespace helperfunctions
                 if (z_axis_eigenvector_idx == -1) 
                 {
                     std::cerr << "\nCould not find Z-aligned eigenvector for gaussian: "<< gaussian.id << "Defaulting to smallest eigenvalue for thickness." << std::flush;
-                    z_axis_eigenvector_idx = 0; // Fallback to smallest eigenvalue as default thickness
+                    z_axis_eigenvector_idx = 0; 
                 }
                 
                 marker.scale.z = 2.0 * scale_factor * std::sqrt(std::max(0.0, gaussian.eigenvalues(z_axis_eigenvector_idx)));
@@ -535,7 +521,7 @@ namespace helperfunctions
                 }
                 else 
                 {
-                 marker.scale.x = min_scale; // Fallback to avoid division by zero or bad scales
+                 marker.scale.x = min_scale; 
                  marker.scale.y = min_scale;
                 }
                 marker.scale.x = std::max(marker.scale.x, static_cast<double>(min_scale));
@@ -546,13 +532,11 @@ namespace helperfunctions
 
                 // --- Set Lifetime ---
                 // 0 indicates infinite lifetime (marker will persist until deleted or replaced)
-                // If your publishing node publishes the marker array frequently, this is fine.
-                // Otherwise, set a short lifetime (e.g., marker.lifetime = rclcpp::Duration(0, 100000000); // 0.1s)
-                marker.lifetime.sec = 0.5;
+                marker.lifetime.sec = 0;
                 marker.lifetime.nanosec = 0;
 
                 // Frame locked determines if the marker moves with the frame or stays fixed in the world
-                marker.frame_locked = false; // Usually false for object markers
+                marker.frame_locked = false; 
 
                 // Add the populated marker to the array
                 marker_array.markers.push_back(marker);

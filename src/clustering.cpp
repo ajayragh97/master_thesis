@@ -30,10 +30,11 @@ class   ClustererNode :   public  rclcpp::Node
             
             dbscan          =   std::make_shared<clustering::DBSCAN_cluster>(eps, min_pts);  
             
-            ellipse_pub     =   this -> create_publisher<visualization_msgs::msg::MarkerArray>("ellipse", 10); 
+            ellipse_pub     =   this -> create_publisher<visualization_msgs::msg::MarkerArray>("ellipse", rclcpp::SystemDefaultsQoS()); 
             
-            pointcloud_pub  =   this -> create_publisher<sensor_msgs::msg::PointCloud2>("clustered_cloud", 10); 
+            pointcloud_pub  =   this -> create_publisher<sensor_msgs::msg::PointCloud2>("clustered_cloud", rclcpp::SystemDefaultsQoS()); 
 
+            odom_pub        =   this -> create_publisher<nav_msgs::msg::Odometry>("odom_corrected", rclcpp::SystemDefaultsQoS());
         }
     
     private:
@@ -54,6 +55,22 @@ class   ClustererNode :   public  rclcpp::Node
             {
                 origin      <<  msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z;
                 origin_set  =   true;
+            }
+
+            if(origin_set)
+            {
+                nav_msgs::msg::Odometry odom_msg;
+                odom_msg.child_frame_id         =   "base_link";
+                odom_msg.header.frame_id        =   "map";
+                odom_msg.header.stamp           =   this->now();
+                odom_msg.pose.covariance        =   msg->pose.covariance; 
+                odom_msg.pose.pose.orientation  =   msg->pose.pose.orientation;
+                odom_msg.pose.pose.position.x   =   msg->pose.pose.position.x - origin(0);
+                odom_msg.pose.pose.position.y   =   msg->pose.pose.position.y - origin(1);
+                odom_msg.pose.pose.position.z   =   msg->pose.pose.position.z - origin(2);
+                odom_msg.twist                  =   msg->twist;
+
+                odom_pub->publish(odom_msg);
             }
         }
 
@@ -253,8 +270,7 @@ class   ClustererNode :   public  rclcpp::Node
         std::shared_ptr<clustering::DBSCAN_cluster> dbscan;
         rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr ellipse_pub;
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_pub;
-        std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
-        rclcpp::TimerBase::SharedPtr tf_timer;
+        rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub;
 
 
 };
