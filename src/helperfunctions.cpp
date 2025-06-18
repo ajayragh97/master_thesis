@@ -423,13 +423,13 @@ namespace helperfunctions
 
     void create_gaussian_ellipsoid_markers( const datastructures::GaussianMixture& gaussian_mixture, 
                                             visualization_msgs::msg::MarkerArray& marker_array, 
+                                            datastructures::MarkerHistory& marker_queue,
                                             const std_msgs::msg::Header& header,
                                             float scale_factor, 
                                             float min_scale    
                                         )
     {
-        // Clear any existing markers in the array
-        marker_array.markers.clear();
+        visualization_msgs::msg::MarkerArray current_markers;
         // Define a namespace for these markers
         std::string marker_namespace = "gaussian_mixture_ellipsoids";
 
@@ -532,18 +532,49 @@ namespace helperfunctions
 
                 // --- Set Lifetime ---
                 // 0 indicates infinite lifetime (marker will persist until deleted or replaced)
-                marker.lifetime.sec = 0;
-                marker.lifetime.nanosec = 0;
+                marker.lifetime.sec = 0.0;
+                marker.lifetime.nanosec = 1;
 
                 // Frame locked determines if the marker moves with the frame or stays fixed in the world
                 marker.frame_locked = false; 
 
                 // Add the populated marker to the array
-                marker_array.markers.push_back(marker);
-            }
-            
+                current_markers.markers.push_back(marker);
+            }    
         }
+
+        if (marker_queue.size() >= 20) 
+        {
+            marker_queue.pop_front();
+        }
+        marker_queue.push_back(current_markers);
+
+        marker_array.markers.clear();
+
+        if(!marker_queue.empty())
+        {
+            marker_array.markers    =   marker_queue.back().markers;
+        }
+
+        int history_marker_id_counter = 0;
+        for(size_t i = 0; i < marker_queue.size() - 1; ++i)
+        {
+            const auto& historical_array = marker_queue[i];
+            for (const auto& original_marker : historical_array.markers)
+            {
+                visualization_msgs::msg::Marker history_marker = original_marker;
+                history_marker.ns = "history";
+                history_marker.color = generateColorFromGaussianID(-2, 0.2);
+                history_marker.id = history_marker_id_counter++;
+                marker_array.markers.push_back(history_marker);
+            }
+        }  
     }
+
+    // void update_unique_gaussians(datastructures::GaussianMixture& unique_gaussians, datastructures::GaussianMixture& new_gaussians)
+    // {
+        
+    // }
 }
 
 

@@ -14,10 +14,12 @@ namespace helperfunctions
     datastructures::GaussianMixture create_gaussian_mixture(datastructures::ClusterMap& cluster_data);
     void create_gaussian_ellipsoid_markers(const datastructures::GaussianMixture& gaussian_mixture, 
                                         visualization_msgs::msg::MarkerArray& marker_array, 
+                                        datastructures::MarkerHistory& marker_queue,
                                         const std_msgs::msg::Header& header,
                                         float scale_factor = 2.0,
                                         float min_scale = 0.01);    
-    std_msgs::msg::ColorRGBA generateColorFromGaussianID(int gaussian_id, float alpha);                                 
+    std_msgs::msg::ColorRGBA generateColorFromGaussianID(int gaussian_id, float alpha);  
+    // void update_unique_gaussians(datastructures::GaussianMixture& unique_gaussians, datastructures::GaussianMixture& new_gaussians);                               
 }
 
 #endif

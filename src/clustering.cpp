@@ -3,8 +3,6 @@
 #include <Eigen/Geometry>
 #include <cstring>
 #include <random>
-#include <visualization_msgs/msg/marker.hpp>
-#include <visualization_msgs/msg/marker_array.hpp>
 #include <tf2_ros/transform_broadcaster.h>
 #include <geometry_msgs/msg/transform_stamped.h>
 
@@ -47,6 +45,8 @@ class   ClustererNode :   public  rclcpp::Node
         Eigen::Vector3f origin;
         int msg_count   =   0;
         bool origin_set =   false;
+        datastructures::GaussianMixture unique_gaussians;
+        datastructures::MarkerHistory marker_queue;
 
         void odometry_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
         {
@@ -151,6 +151,16 @@ class   ClustererNode :   public  rclcpp::Node
                 gaussian_mixture    =   helperfunctions::create_gaussian_mixture(cluster_data);
                 rclcpp::Time stamp  =   msg->header.stamp;
                 int total_points    =   radar_data.size();
+
+                // identifying unique clusters
+                if(unique_gaussians.empty())
+                {
+                    unique_gaussians    =   gaussian_mixture;
+                }
+                else
+                {
+                    // helperfunctions::update_unique_gaussians(unique_gaussians, gaussian_mixture);
+                }
                 publish_ellipsoid(gaussian_mixture, stamp);
                 publish_clustered_pointcloud(cluster_data, stamp);
 
@@ -168,7 +178,7 @@ class   ClustererNode :   public  rclcpp::Node
             float scale_factor = 2.0;
             float min_diameter = 0.1;
 
-            helperfunctions::create_gaussian_ellipsoid_markers(gaussian_mixture, marker_array_msg, header, scale_factor, min_diameter);
+            helperfunctions::create_gaussian_ellipsoid_markers(gaussian_mixture, marker_array_msg, marker_queue, header, scale_factor, min_diameter);
             ellipse_pub->publish(marker_array_msg);  
         }
 

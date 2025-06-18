@@ -2,8 +2,11 @@
 #define DATASTRUCTURE_HPP
 
 #include <map>
+#include <deque>
 #include <vector>
 #include <Eigen/Dense>
+#include <visualization_msgs/msg/marker.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
 
 
 
@@ -50,7 +53,9 @@ namespace datastructures
         bool dynamic = false;
     };
 
-    using GaussianMixture = std::map<int, Gaussian>;
+    using GaussianMixture   =   std::map<int, Gaussian>;
+    using AssociationMap    =   std::map<int, int>; // mapping between matching gaussian ids
+    using ScoreMap          =   std::map<int, double>; //mapping between gaussian id and best score
 
     struct Ellipse2D
     {
@@ -58,6 +63,8 @@ namespace datastructures
         double axis_2;
         double orientation;
     };
+
+    using MarkerHistory = std::deque<visualization_msgs::msg::MarkerArray>;
 }
 
 #endif
