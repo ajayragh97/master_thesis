@@ -266,7 +266,6 @@ namespace helperfunctions
 
     datastructures::GaussianMixture create_gaussian_mixture(datastructures::ClusterMap& temp_cluster_data)
     {
-        bool ensure_2d  =   true;
         datastructures::GaussianMixture gaussian_mixture;
 
         for(auto& entry : temp_cluster_data)
@@ -288,7 +287,6 @@ namespace helperfunctions
 
             // calculate the covariance of the point measurements
             calculate_covariance(entry.second);
-            calculate_covariance_2d(entry.second);
 
             // calculate weights and centroid of cluster
             double rcs_sum      =   0.0;
@@ -299,8 +297,7 @@ namespace helperfunctions
             }
 
             gaussian.centroid   =   Eigen::Vector3d::Zero();
-            Eigen::Vector2d centroid_2d =   Eigen::Vector2d::Zero();
-            Eigen::Matrix2d weighted_point_cov_sum_2d = Eigen::Matrix2d::Zero();
+
             if(entry.second.points.empty() || rcs_sum == 0.0)
             {
                 std::cerr << "Error: empty cluster or zero rcs sum skipping cluster: " << cluster_id << std::flush;
@@ -317,12 +314,11 @@ namespace helperfunctions
                 position            <<  point.x, point.y, 0.0;
                 gaussian.centroid   +=  (weight * position);
 
+                // modification test removing weighting
+                // gaussian.centroid += position;
+                // <-------------------------------------------->
+
                 // std::cerr << "\ngaussian centroid of id: " << gaussian.id << " : (" << gaussian.centroid << ")" << std::flush;
-                // Calculating 2D weighted covariance
-                Eigen::Vector2d position_2d;
-                position_2d         <<  point.x, point.y;
-                centroid_2d         +=  (weight * position_2d);
-                weighted_point_cov_sum_2d  += (weight * point.cov_2d);
                 
                 // Accumulate unweighted averages for velocity, rcs, noise
                 gaussian.velocity       += point.vel;
@@ -332,6 +328,9 @@ namespace helperfunctions
             }
 
             double num_points           = static_cast<double>(entry.second.points.size());
+            // <------unweighted test---------------->
+            // gaussian.centroid           /= num_points;
+            // <-------------------------------------->
             gaussian.velocity           /= num_points;
             gaussian.intensity          /= num_points;
             gaussian.noise              /= num_points;
@@ -340,7 +339,6 @@ namespace helperfunctions
 
             // calculate the final weighted covariance
             Eigen::Matrix3d mean_deviation_cov = Eigen::Matrix3d::Zero();
-            Eigen::Matrix2d mean_deviation_cov_2d=  Eigen::Matrix2d::Zero();
             for (const datastructures::Point& point : entry.second.points)
             {
                 Eigen::Vector3d position;
@@ -363,10 +361,14 @@ namespace helperfunctions
 
                 // Add weighted outer product to the covariance accumulator
                 mean_deviation_cov += (weight * outer_prod);
+
+                // <---------------unweighted test------------------>
+                // mean_deviation_cov  += outer_prod;
+
             }
 
             gaussian.cov                   =    mean_deviation_cov + weighted_point_cov_sum;
-            gaussian.cov_2d                =    mean_deviation_cov.block<2,2>(0, 0) + weighted_point_cov_sum_2d;
+            gaussian.cov_2d                =    gaussian.cov.block<2,2>(0, 0);
             compute_gaussian_pose(gaussian);        
             gaussian_mixture[cluster_id]    =   gaussian;
             
@@ -526,9 +528,10 @@ namespace helperfunctions
                 }
                 marker.scale.x = std::max(marker.scale.x, static_cast<double>(min_scale));
                 marker.scale.y = std::max(marker.scale.y, static_cast<double>(min_scale));
-                marker.scale.z = std::max(marker.scale.z, static_cast<double>(min_scale)); 
+                // marker.scale.z = std::max(marker.scale.z, static_cast<double>(min_scale)); 
+                marker.scale.z = std::max(marker.scale.z, static_cast<double>(1.0));   
                 // --- Set Color ---
-                marker.color = generateColorFromGaussianID(gaussian_id, 0.7f); 
+                marker.color = generateColorFromGaussianID(gaussian_id, 0.5f); 
 
                 // --- Set Lifetime ---
                 // 0 indicates infinite lifetime (marker will persist until deleted or replaced)

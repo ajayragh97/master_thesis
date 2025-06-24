@@ -33,7 +33,7 @@ private:
     std::vector<int> regionQuery(const std::vector<datastructures::Point>& points, const datastructures::Point& point, const float& max_int, const float& min_int);
 
     // Expand the cluster
-    bool expandCluster(std::vector<datastructures::Point>& points, int point_idx, int cluster_id);
+    bool expandCluster(std::vector<datastructures::Point>& points, int point_idx, int cluster_id, float& max_int, float& min_int);
 
     
 
@@ -100,11 +100,8 @@ float DBSCAN_cluster::find_intensity_bounds(std::vector<datastructures::Point>& 
 }
 
 // Expand the cluster recursively based on neighbors
-bool DBSCAN_cluster::expandCluster(std::vector<datastructures::Point>& points, int point_idx, int cluster_id)
+bool DBSCAN_cluster::expandCluster(std::vector<datastructures::Point>& points, int point_idx, int cluster_id, float& max_int, float& min_int)
 {   
-
-    float max_int, min_int;
-    find_intensity_bounds(points, max_int, min_int);
     auto neighbors = regionQuery(points, points[point_idx], max_int, min_int);
 
     // If the number of neighbors is below the minimum number of points, mark as noise
@@ -153,6 +150,8 @@ bool DBSCAN_cluster::expandCluster(std::vector<datastructures::Point>& points, i
 void DBSCAN_cluster::fit(std::vector<datastructures::Point>& points)
 {
     int cluster_id = 0;
+    float max_int, min_int;
+    find_intensity_bounds(points, max_int, min_int);
 
     // Iterate over each point in the dataset
     for (int i = 0; i < points.size(); ++i) {
@@ -163,9 +162,9 @@ void DBSCAN_cluster::fit(std::vector<datastructures::Point>& points)
         }
 
         points[i].visited = true;
-
+        
         // Try to expand the cluster from the current point
-        if (expandCluster(points, i, cluster_id)) 
+        if (expandCluster(points, i, cluster_id, max_int, min_int)) 
         {
             cluster_id++; // Move to the next cluster
         }

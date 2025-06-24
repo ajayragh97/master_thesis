@@ -5,7 +5,7 @@
 #include <random>
 #include <tf2_ros/transform_broadcaster.h>
 #include <geometry_msgs/msg/transform_stamped.h>
-
+#include <tf2_ros/static_transform_broadcaster.h>
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
@@ -18,10 +18,10 @@
 class   ClustererNode :   public  rclcpp::Node
 {
     public:
-        ClustererNode(double eps, int min_pts, int count) : Node("target_tracking_node"), eps_(eps), min_pts_(min_pts), count_(count)
+        ClustererNode(double eps, int min_pts, int count) : Node("clustering_node"), eps_(eps), min_pts_(min_pts), count_(count)
         {
             pcl_sub          =   this -> create_subscription<sensor_msgs::msg::PointCloud2>
-                                ("/radarpcl_gc", rclcpp::SystemDefaultsQoS(), std::bind(&ClustererNode::pointcloud_callback, this, std::placeholders::_1));
+                                ("/radarpcl_agg", rclcpp::SystemDefaultsQoS(), std::bind(&ClustererNode::pointcloud_callback, this, std::placeholders::_1));
             
             odom_sub        =   this -> create_subscription<nav_msgs::msg::Odometry>
                                 ("/odom", rclcpp::SystemDefaultsQoS(), std::bind(&ClustererNode::odometry_callback, this, std::placeholders::_1));
@@ -33,6 +33,9 @@ class   ClustererNode :   public  rclcpp::Node
             pointcloud_pub  =   this -> create_publisher<sensor_msgs::msg::PointCloud2>("clustered_cloud", rclcpp::SystemDefaultsQoS()); 
 
             odom_pub        =   this -> create_publisher<nav_msgs::msg::Odometry>("odom_corrected", rclcpp::SystemDefaultsQoS());
+
+            dynamic_tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
+            static_tf_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
         }
     
     private:
@@ -55,14 +58,24 @@ class   ClustererNode :   public  rclcpp::Node
             {
                 origin      <<  msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z;
                 origin_set  =   true;
+
+                geometry_msgs::msg::TransformStamped t;
+                t.header.stamp = this->get_clock()->now();
+                t.header.frame_id = "map";
+                t.child_frame_id = "map_corr";
+                t.transform.translation.x = origin(0);
+                t.transform.translation.y = origin(1);
+                t.transform.translation.z = origin(2);
+                t.transform.rotation.w = 1.0; // Identity rotation
+                static_tf_broadcaster_->sendTransform(t);
             }
 
             if(origin_set)
             {
                 nav_msgs::msg::Odometry odom_msg;
-                odom_msg.child_frame_id         =   "base_link";
-                odom_msg.header.frame_id        =   "map";
-                odom_msg.header.stamp           =   this->now();
+                odom_msg.child_frame_id         =   "map_corr";
+                odom_msg.header.frame_id        =   msg->child_frame_id;
+                odom_msg.header.stamp           =   msg->header.stamp;
                 odom_msg.pose.covariance        =   msg->pose.covariance; 
                 odom_msg.pose.pose.orientation  =   msg->pose.pose.orientation;
                 odom_msg.pose.pose.position.x   =   msg->pose.pose.position.x - origin(0);
@@ -70,7 +83,21 @@ class   ClustererNode :   public  rclcpp::Node
                 odom_msg.pose.pose.position.z   =   msg->pose.pose.position.z - origin(2);
                 odom_msg.twist                  =   msg->twist;
 
-                odom_pub->publish(odom_msg);
+                geometry_msgs::msg::TransformStamped t;
+
+                // Read the transform from the odom_msg
+                t.header.stamp = odom_msg.header.stamp;
+                t.header.frame_id = "map_corr"; // "map_corr"
+                t.child_frame_id = "base_link";
+
+                t.transform.translation.x = odom_msg.pose.pose.position.x;
+                t.transform.translation.y = odom_msg.pose.pose.position.y;
+                t.transform.translation.z = odom_msg.pose.pose.position.z;
+                t.transform.rotation = odom_msg.pose.pose.orientation;
+
+                // Send the transform
+                dynamic_tf_broadcaster_->sendTransform(t);
+
             }
         }
 
@@ -173,9 +200,9 @@ class   ClustererNode :   public  rclcpp::Node
         {
             visualization_msgs::msg::MarkerArray marker_array_msg;
             std_msgs::msg::Header header;
-            header.stamp = this->now(); 
-            header.frame_id = "map";
-            float scale_factor = 2.0;
+            header.stamp = stamp; 
+            header.frame_id = "map_corr";
+            float scale_factor = 3.0;
             float min_diameter = 0.1;
 
             helperfunctions::create_gaussian_ellipsoid_markers(gaussian_mixture, marker_array_msg, marker_queue, header, scale_factor, min_diameter);
@@ -191,8 +218,8 @@ class   ClustererNode :   public  rclcpp::Node
             }
 
             sensor_msgs::msg::PointCloud2 cloud_msg;
-            cloud_msg.header.stamp = this->now();
-            cloud_msg.header.frame_id = "map";
+            cloud_msg.header.stamp = stamp;
+            cloud_msg.header.frame_id = "map_corr";
 
             
 
@@ -281,6 +308,8 @@ class   ClustererNode :   public  rclcpp::Node
         rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr ellipse_pub;
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_pub;
         rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub;
+        std::shared_ptr<tf2_ros::TransformBroadcaster> dynamic_tf_broadcaster_;
+        std::shared_ptr<tf2_ros::StaticTransformBroadcaster> static_tf_broadcaster_;
 
 
 };

@@ -1,0 +1,37 @@
+/clustering_node:
+  ros__parameters:
+    dbscan:
+      epsilon: 1.0
+      min_pts: 2
+    
+    input:
+      intensity: rcs
+
+    map:
+      cell_size: 0.5
+      cone_angle: 120.0
+      map_size: 50.0
+      max_distance: 15.0
+
+    radar:
+      angle_max: 1.0471975512 # maximum angle threshold (+/- angle)
+      angle_min: 0.0 # min angle threshold
+      angle_var_max: 0.034906585  # uncertainty at angle max (2 degrees)
+      angle_var_min: 0.0087266463 # uncertainty at angle min (0.5 degrees)
+      range_var: 0.15
+      sensor_range_max: 100.0
+
+    visualization:
+      scale_factor: 1.0
+      z_scale:  0.5
+    
+    qos_overrides:
+      /parameter_events:
+        publisher:
+          depth: 1000
+          durability: volatile
+          history: keep_last
+          reliability: reliable
+
+    start_type_description_service: true
+    use_sim_time: false
