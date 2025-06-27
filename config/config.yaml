@@ -1,8 +1,9 @@
 /clustering_node:
   ros__parameters:
     dbscan:
-      epsilon: 1.0
-      min_pts: 2
+      epsilon: 0.4
+      min_pts: 4
+      msg_count: 1
     
     input:
       intensity: rcs
@@ -22,8 +23,11 @@
       sensor_range_max: 100.0
 
     visualization:
-      scale_factor: 1.0
-      z_scale:  0.5
+      scale_factor: 3.0
+      min_diameter: 0.1
+      history_alpha: 0.05
+      alpha: 0.7
+
     
     qos_overrides:
       /parameter_events:

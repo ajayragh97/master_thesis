@@ -9,7 +9,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
-#include "nav_msgs/msg/odometry.hpp"
 #include "../include/master_thesis/datastructure.hpp"
 #include "../include/master_thesis/dbscan.hpp"
 #include "../include/master_thesis/helperfunctions.hpp"
@@ -18,9 +17,48 @@
 class   ClustererNode :   public  rclcpp::Node
 {
     public:
-        ClustererNode(double eps, int min_pts, int count) : Node("clustering_node"), eps_(eps), min_pts_(min_pts), count_(count)
+        ClustererNode() : Node("clustering_node")
         {
-            pcl_sub          =   this -> create_subscription<sensor_msgs::msg::PointCloud2>
+
+            this->declare_parameter<double>("dbscan.epsilon", 1.0);
+            this->declare_parameter<int>("dbscan.min_pts", 2);
+            this->declare_parameter<int>("dbscan.msg_count", 1);
+            this->declare_parameter<double>("radar.angle_max", 1.0471975512);
+            this->declare_parameter<double>("radar.angle_min", 0.0);
+            this->declare_parameter<double>("radar.angle_var_max", 0.034906585);
+            this->declare_parameter<double>("radar.angle_var_min", 0.0087266463);
+            this->declare_parameter<double>("radar.range_var", 0.15);
+            this->declare_parameter<double>("visualization.scale_factor", 1.0);
+            this->declare_parameter<double>("visualization.min_diameter", 0.1);
+            this->declare_parameter<double>("visualization.alpha", 0.7);
+            this->declare_parameter<double>("visualization.history_alpha", 0.1);
+            this->declare_parameter<double>("map.cell_size", 0.25);
+            this->declare_parameter<double>("map.map_size", 20);
+            
+
+            eps             =   this->get_parameter("dbscan.epsilon").as_double();
+            min_pts         =   this->get_parameter("dbscan.min_pts").as_int();
+            count           =   this->get_parameter("dbscan.msg_count").as_int();
+            angle_max       =   this->get_parameter("radar.angle_max").as_double();
+            angle_min       =   this->get_parameter("radar.angle_min").as_double();
+            angle_var_max   =   this->get_parameter("radar.angle_var_max").as_double();
+            angle_var_min   =   this->get_parameter("radar.angle_var_min").as_double();
+            range_var       =   this->get_parameter("radar.range_var").as_double();
+            scale_factor    =   this->get_parameter("visualization.scale_factor").as_double();
+            min_diameter    =   this->get_parameter("visualization.min_diameter").as_double();
+            alpha           =   this->get_parameter("visualization.alpha").as_double();
+            history_alpha   =   this->get_parameter("visualization.history_alpha").as_double();
+            cell_size       =   this->get_parameter("map.cell_size").as_double();
+            map_size        =   this->get_parameter("map.map_size").as_double();
+
+
+            num_cells       =   static_cast<int>(map_size/cell_size);
+            grid_rows       =   num_cells;
+            grid_cols       =   num_cells;
+            occ_grid        =   std::vector<std::vector<float>>(grid_rows, std::vector<float>(grid_cols, 0.5f));
+
+
+            pcl_sub         =   this -> create_subscription<sensor_msgs::msg::PointCloud2>
                                 ("/radarpcl_agg", rclcpp::SystemDefaultsQoS(), std::bind(&ClustererNode::pointcloud_callback, this, std::placeholders::_1));
             
             odom_sub        =   this -> create_subscription<nav_msgs::msg::Odometry>
@@ -36,13 +74,30 @@ class   ClustererNode :   public  rclcpp::Node
 
             dynamic_tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
             static_tf_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
+
         }
     
     private:
 
-        double eps_;
-        int min_pts_;
-        int count_;
+        
+        int min_pts;
+        int count;
+        int grid_rows;
+        int grid_cols;
+        int num_cells;
+        double eps;
+        double angle_max;
+        double angle_min;
+        double angle_var_max;
+        double angle_var_min;
+        double range_var;
+        double scale_factor;
+        double min_diameter;
+        double alpha;
+        double history_alpha;
+        double cell_size;
+        double map_size;
+
         
         std::vector<datastructures::Point> radar_data;
         Eigen::Vector3f origin;
@@ -50,9 +105,13 @@ class   ClustererNode :   public  rclcpp::Node
         bool origin_set =   false;
         datastructures::GaussianMixture unique_gaussians;
         datastructures::MarkerHistory marker_queue;
+        std::vector<std::vector<float>> occ_grid;
+        nav_msgs::msg::Odometry odom_msg;
+
 
         void odometry_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
         {
+            
             // geometry_msgs::msg::TransformStamped t;
             if(!origin_set)
             {
@@ -72,9 +131,9 @@ class   ClustererNode :   public  rclcpp::Node
 
             if(origin_set)
             {
-                nav_msgs::msg::Odometry odom_msg;
-                odom_msg.child_frame_id         =   "map_corr";
-                odom_msg.header.frame_id        =   msg->child_frame_id;
+                
+                odom_msg.child_frame_id         =   "base_link";
+                odom_msg.header.frame_id        =   "map_corr";
                 odom_msg.header.stamp           =   msg->header.stamp;
                 odom_msg.pose.covariance        =   msg->pose.covariance; 
                 odom_msg.pose.pose.orientation  =   msg->pose.pose.orientation;
@@ -96,6 +155,7 @@ class   ClustererNode :   public  rclcpp::Node
                 t.transform.rotation = odom_msg.pose.pose.orientation;
 
                 // Send the transform
+                odom_pub->publish(odom_msg);
                 dynamic_tf_broadcaster_->sendTransform(t);
 
             }
@@ -153,7 +213,7 @@ class   ClustererNode :   public  rclcpp::Node
 
             }
 
-            if (msg_count > count_)
+            if (msg_count > count)
             {
                 // perform dbscan filtering 
                 auto start      =   std::chrono::high_resolution_clock::now();
@@ -175,11 +235,12 @@ class   ClustererNode :   public  rclcpp::Node
                 
                 // creating the gaussian mixture from the clusters
                 datastructures::GaussianMixture gaussian_mixture;
-                gaussian_mixture    =   helperfunctions::create_gaussian_mixture(cluster_data);
+                gaussian_mixture    =   helperfunctions::create_gaussian_mixture(cluster_data, angle_max, angle_min, angle_var_max, angle_var_min, range_var);
                 rclcpp::Time stamp  =   msg->header.stamp;
                 int total_points    =   radar_data.size();
 
                 // identifying unique clusters
+
                 if(unique_gaussians.empty())
                 {
                     unique_gaussians    =   gaussian_mixture;
@@ -202,12 +263,16 @@ class   ClustererNode :   public  rclcpp::Node
             std_msgs::msg::Header header;
             header.stamp = stamp; 
             header.frame_id = "map_corr";
-            float scale_factor = 3.0;
-            float min_diameter = 0.1;
+            float scale_factor_ = static_cast<float>(scale_factor);
+            float min_diameter_ = static_cast<float>(min_diameter);
+            float alpha_        = static_cast<float>(alpha);
+            float history_alpha_= static_cast<float>(history_alpha);
 
-            helperfunctions::create_gaussian_ellipsoid_markers(gaussian_mixture, marker_array_msg, marker_queue, header, scale_factor, min_diameter);
+
+            helperfunctions::create_gaussian_ellipsoid_markers(gaussian_mixture, odom_msg, marker_array_msg, marker_queue, header, scale_factor_, min_diameter_, alpha_, history_alpha_);
             ellipse_pub->publish(marker_array_msg);  
         }
+
 
         void publish_clustered_pointcloud(const datastructures::ClusterMap& clusters, const rclcpp::Time& stamp)
         {
@@ -316,13 +381,8 @@ class   ClustererNode :   public  rclcpp::Node
 
 int main(int argc, char **argv)
 {
-    rclcpp::init(argc, argv);
-
-    double eps = 1;
-    int min_pts = 2;
-    int count = 1;
-    
-    rclcpp::spin(std::make_shared<ClustererNode>(eps, min_pts, count));
+    rclcpp::init(argc, argv);    
+    rclcpp::spin(std::make_shared<ClustererNode>());
     rclcpp::shutdown();
     return 0;
 }

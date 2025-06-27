@@ -5,6 +5,8 @@
 #include <numeric>
 #include <algorithm>
 #include <iostream> 
+#include <sstream>
+#include <iomanip>
 #include <Eigen/Dense> 
 #include <Eigen/Eigenvalues> 
 
@@ -151,13 +153,14 @@ namespace helperfunctions
         }
     }
 
-    void calculate_covariance(datastructures::ClusterData& cluster_data)
+    void calculate_covariance(  datastructures::ClusterData& cluster_data,
+                                const double& angle_max,
+                                const double& angle_min,
+                                const double& angle_var_max,
+                                const double& angle_var_min,
+                                const double& range_var)
     {
-        double angle_max            =   1.0471975512;
-        double angle_min            =   0.0;
-        double angle_var_max        =   0.034906585;
-        double angle_var_min        =   0.0087266463;
-        double range_var            =   0.15;
+
         double elevation            =   0.0; // we only have 2d data
 
         for(auto& point : cluster_data.points)
@@ -264,7 +267,12 @@ namespace helperfunctions
         
     }
 
-    datastructures::GaussianMixture create_gaussian_mixture(datastructures::ClusterMap& temp_cluster_data)
+    datastructures::GaussianMixture create_gaussian_mixture(datastructures::ClusterMap& temp_cluster_data,
+                                                            const double& angle_max,
+                                                            const double& angle_min,
+                                                            const double& angle_var_max,
+                                                            const double& angle_var_min,
+                                                            const double& range_var)
     {
         datastructures::GaussianMixture gaussian_mixture;
 
@@ -286,7 +294,7 @@ namespace helperfunctions
             gaussian.weight     =   0.0;
 
             // calculate the covariance of the point measurements
-            calculate_covariance(entry.second);
+            calculate_covariance(entry.second, angle_max, angle_min, angle_var_max, angle_var_min, range_var);
 
             // calculate weights and centroid of cluster
             double rcs_sum      =   0.0;
@@ -367,8 +375,9 @@ namespace helperfunctions
 
             }
 
-            gaussian.cov                   =    mean_deviation_cov + weighted_point_cov_sum;
-            gaussian.cov_2d                =    gaussian.cov.block<2,2>(0, 0);
+            gaussian.cov                    =   mean_deviation_cov + weighted_point_cov_sum;
+            gaussian.cov_inv                =   gaussian.cov.inverse();
+            gaussian.norm_factor            =   1.0 / (std::pow(2.0 * M_PI, gaussian.centroid.cols() / 2.0) * std::sqrt(gaussian.cov.determinant()));
             compute_gaussian_pose(gaussian);        
             gaussian_mixture[cluster_id]    =   gaussian;
             
@@ -422,18 +431,25 @@ namespace helperfunctions
         return ellipse_params;
     }
 
-
+    float euclidean_distance(const float& x1, const float& y1, const float& z1, const float& x2, const float& y2, const float& z2)
+    {
+        return sqrtf(powf(x2 - x1, 2) + powf(y2 - y1, 2) + powf(z2 - z1, 2));  
+    }
     void create_gaussian_ellipsoid_markers( const datastructures::GaussianMixture& gaussian_mixture, 
+                                            const nav_msgs::msg::Odometry& odom_msg,
                                             visualization_msgs::msg::MarkerArray& marker_array, 
                                             datastructures::MarkerHistory& marker_queue,
                                             const std_msgs::msg::Header& header,
-                                            float scale_factor, 
-                                            float min_scale    
+                                            const float& scale_factor, 
+                                            const float& min_scale, 
+                                            const float& alpha,
+                                            const float& history_alpha
                                         )
     {
         visualization_msgs::msg::MarkerArray current_markers;
         // Define a namespace for these markers
-        std::string marker_namespace = "gaussian_mixture_ellipsoids";
+        std::string marker_namespace    = "gaussian_mixture_ellipsoids";
+        std::string label_namespace     = "gaussian_mixture_labels";
 
         // Define default color 
         std_msgs::msg::ColorRGBA default_color;
@@ -529,9 +545,9 @@ namespace helperfunctions
                 marker.scale.x = std::max(marker.scale.x, static_cast<double>(min_scale));
                 marker.scale.y = std::max(marker.scale.y, static_cast<double>(min_scale));
                 // marker.scale.z = std::max(marker.scale.z, static_cast<double>(min_scale)); 
-                marker.scale.z = std::max(marker.scale.z, static_cast<double>(1.0));   
+                marker.scale.z = std::max(marker.scale.z, static_cast<double>(0.25));   
                 // --- Set Color ---
-                marker.color = generateColorFromGaussianID(gaussian_id, 0.5f); 
+                marker.color = generateColorFromGaussianID(gaussian_id, alpha); 
 
                 // --- Set Lifetime ---
                 // 0 indicates infinite lifetime (marker will persist until deleted or replaced)
@@ -543,6 +559,36 @@ namespace helperfunctions
 
                 // Add the populated marker to the array
                 current_markers.markers.push_back(marker);
+
+
+                // creating text labels for the marker
+                visualization_msgs::msg::Marker text_marker;
+                text_marker.header  =   header;
+                text_marker.ns      =   label_namespace;
+                text_marker.id      =   gaussian_id;
+                text_marker.type    =   visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
+                text_marker.action  =   visualization_msgs::msg::Marker::ADD;
+                text_marker.pose    =   marker.pose;
+                
+                text_marker.pose.position.z +=  (marker.scale.z / 2) + 0.2;
+                text_marker.scale.z         =   0.4;
+                text_marker.color.r         =   0.0f;
+                text_marker.color.g         =   0.0f;
+                text_marker.color.b         =   0.0f;
+                text_marker.color.a         =   1.0f;
+
+                float distance              =   euclidean_distance(odom_msg.pose.pose.position.x,
+                                                                    odom_msg.pose.pose.position.y,
+                                                                    odom_msg.pose.pose.position.z,
+                                                                    marker.pose.position.x,
+                                                                    marker.pose.position.y,
+                                                                    marker.pose.position.z);
+                std::stringstream ss;
+                ss  << "dist: " << std::fixed << std::setprecision(2) << distance << " m";
+
+                text_marker.text            =   ss.str();
+
+                current_markers.markers.push_back(text_marker);
             }    
         }
 
@@ -554,9 +600,19 @@ namespace helperfunctions
 
         marker_array.markers.clear();
 
+        visualization_msgs::msg::Marker clear_markers;
+        clear_markers.header            =   header;
+        clear_markers.header.frame_id   =   "map_corr";
+        clear_markers.action            =   visualization_msgs::msg::Marker::DELETEALL;
+        marker_array.markers.push_back(clear_markers);
+
         if(!marker_queue.empty())
         {
-            marker_array.markers    =   marker_queue.back().markers;
+            const auto& latest_markers = marker_queue.back().markers;
+            marker_array.markers.insert(marker_array.markers.end(), 
+                                        latest_markers.begin(), 
+                                        latest_markers.end());
+
         }
 
         int history_marker_id_counter = 0;
@@ -565,11 +621,16 @@ namespace helperfunctions
             const auto& historical_array = marker_queue[i];
             for (const auto& original_marker : historical_array.markers)
             {
-                visualization_msgs::msg::Marker history_marker = original_marker;
-                history_marker.ns = "history";
-                history_marker.color = generateColorFromGaussianID(-2, 0.2);
-                history_marker.id = history_marker_id_counter++;
-                marker_array.markers.push_back(history_marker);
+                if(original_marker.type != visualization_msgs::msg::Marker::TEXT_VIEW_FACING)
+                {
+                    visualization_msgs::msg::Marker history_marker  =   original_marker;
+                    history_marker.ns                               =   "history";
+                    history_marker.color                            =   generateColorFromGaussianID(-2, history_alpha);
+                    history_marker.id                               =   history_marker_id_counter;
+                    history_marker_id_counter++;
+                    marker_array.markers.push_back(history_marker);
+                }
+                
             }
         }  
     }

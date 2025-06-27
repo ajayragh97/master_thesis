@@ -31,7 +31,6 @@ namespace datastructures
     {
         std::vector<Point> points;
         Eigen::Matrix3d     cov;
-        Eigen::Matrix2d     cov_2d;
         Eigen::RowVectorXd  center;
         double               avg_vel;
     };
@@ -42,14 +41,15 @@ namespace datastructures
     {
         Eigen::Vector3d centroid;
         Eigen::Matrix3d cov;
-        Eigen::Matrix2d cov_2d;
         Eigen::Matrix4d pose;
         Eigen::Vector3d eigenvalues;
+        Eigen::Matrix3d cov_inv;
         int id;
         double intensity;
         double noise;
         double weight;
         double velocity;
+        double norm_factor;
         bool dynamic = false;
     };
 
