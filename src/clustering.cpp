@@ -30,10 +30,12 @@ class   ClustererNode :   public  rclcpp::Node
             this->declare_parameter<double>("radar.range_var", 0.15);
             this->declare_parameter<double>("visualization.scale_factor", 1.0);
             this->declare_parameter<double>("visualization.min_diameter", 0.1);
+            this->declare_parameter<int>("visualization.history", 20);
             this->declare_parameter<double>("visualization.alpha", 0.7);
             this->declare_parameter<double>("visualization.history_alpha", 0.1);
             this->declare_parameter<double>("map.cell_size", 0.25);
             this->declare_parameter<double>("map.map_size", 20);
+            this->declare_parameter<double>("gaussian.velocity_threshold", 2.0);
             
 
             eps             =   this->get_parameter("dbscan.epsilon").as_double();
@@ -46,10 +48,12 @@ class   ClustererNode :   public  rclcpp::Node
             range_var       =   this->get_parameter("radar.range_var").as_double();
             scale_factor    =   this->get_parameter("visualization.scale_factor").as_double();
             min_diameter    =   this->get_parameter("visualization.min_diameter").as_double();
+            history         =   this->get_parameter("visualization.history").as_int();
             alpha           =   this->get_parameter("visualization.alpha").as_double();
             history_alpha   =   this->get_parameter("visualization.history_alpha").as_double();
             cell_size       =   this->get_parameter("map.cell_size").as_double();
             map_size        =   this->get_parameter("map.map_size").as_double();
+            vel_thresh      =   this->get_parameter("gaussian.velocity_threshold").as_double();
 
 
             num_cells       =   static_cast<int>(map_size/cell_size);
@@ -85,6 +89,7 @@ class   ClustererNode :   public  rclcpp::Node
         int grid_rows;
         int grid_cols;
         int num_cells;
+        int history;
         double eps;
         double angle_max;
         double angle_min;
@@ -97,6 +102,7 @@ class   ClustererNode :   public  rclcpp::Node
         double history_alpha;
         double cell_size;
         double map_size;
+        double vel_thresh;
 
         
         std::vector<datastructures::Point> radar_data;
@@ -206,7 +212,7 @@ class   ClustererNode :   public  rclcpp::Node
                 radar_point.z           =   z;
                 radar_point.azimuth     =   azimuth;
                 radar_point.range       =   range;
-                radar_point.vel         =   velocity;
+                radar_point.vel         =   velocity_c;
                 radar_point.rcs         =   rcs_linear;   
                 
                 radar_data.push_back(radar_point);
@@ -235,7 +241,7 @@ class   ClustererNode :   public  rclcpp::Node
                 
                 // creating the gaussian mixture from the clusters
                 datastructures::GaussianMixture gaussian_mixture;
-                gaussian_mixture    =   helperfunctions::create_gaussian_mixture(cluster_data, angle_max, angle_min, angle_var_max, angle_var_min, range_var);
+                gaussian_mixture    =   helperfunctions::create_gaussian_mixture(cluster_data, angle_max, angle_min, angle_var_max, angle_var_min, range_var, vel_thresh);
                 rclcpp::Time stamp  =   msg->header.stamp;
                 int total_points    =   radar_data.size();
 
@@ -269,7 +275,7 @@ class   ClustererNode :   public  rclcpp::Node
             float history_alpha_= static_cast<float>(history_alpha);
 
 
-            helperfunctions::create_gaussian_ellipsoid_markers(gaussian_mixture, odom_msg, marker_array_msg, marker_queue, header, scale_factor_, min_diameter_, alpha_, history_alpha_);
+            helperfunctions::create_gaussian_ellipsoid_markers(gaussian_mixture, odom_msg, marker_array_msg, marker_queue, header, scale_factor_, min_diameter_, alpha_, history_alpha_, history);
             ellipse_pub->publish(marker_array_msg);  
         }
 

@@ -272,7 +272,8 @@ namespace helperfunctions
                                                             const double& angle_min,
                                                             const double& angle_var_max,
                                                             const double& angle_var_min,
-                                                            const double& range_var)
+                                                            const double& range_var,
+                                                            const double& vel_thresh)
     {
         datastructures::GaussianMixture gaussian_mixture;
 
@@ -378,6 +379,12 @@ namespace helperfunctions
             gaussian.cov                    =   mean_deviation_cov + weighted_point_cov_sum;
             gaussian.cov_inv                =   gaussian.cov.inverse();
             gaussian.norm_factor            =   1.0 / (std::pow(2.0 * M_PI, gaussian.centroid.cols() / 2.0) * std::sqrt(gaussian.cov.determinant()));
+
+            if(std::abs(gaussian.velocity) > vel_thresh)
+            {
+                gaussian.dynamic = true;
+            }
+
             compute_gaussian_pose(gaussian);        
             gaussian_mixture[cluster_id]    =   gaussian;
             
@@ -443,20 +450,44 @@ namespace helperfunctions
                                             const float& scale_factor, 
                                             const float& min_scale, 
                                             const float& alpha,
-                                            const float& history_alpha
+                                            const float& history_alpha,
+                                            const int& history
                                         )
     {
         visualization_msgs::msg::MarkerArray current_markers;
         // Define a namespace for these markers
-        std::string marker_namespace    = "gaussian_mixture_ellipsoids";
-        std::string label_namespace     = "gaussian_mixture_labels";
+        std::string dynamic_ns   = "dynamic";
+        std::string static_ns    = "static";
+        std::string label_ns     = "labels";
+        std::string history_static_ns   = "history_static";
+        std::string history_dynamic_ns  = "history_dynamic";
 
-        // Define default color 
-        std_msgs::msg::ColorRGBA default_color;
-        default_color.r = 0.0f;
-        default_color.g = 1.0f;
-        default_color.b = 0.0f;
-        default_color.a = 0.5f; 
+        // Define color 
+        std_msgs::msg::ColorRGBA static_color;
+        static_color.r = 1.0f;
+        static_color.g = 0.0f;
+        static_color.b = 0.0f;
+        static_color.a = alpha;
+
+        std_msgs::msg::ColorRGBA history_static_color;
+        history_static_color.r = 1.0f;
+        history_static_color.g = 0.0f;
+        history_static_color.b = 0.0f;
+        history_static_color.a = history_alpha;
+        
+        std_msgs::msg::ColorRGBA dynamic_color;
+        dynamic_color.r = 0.0f;
+        dynamic_color.g = 1.0f;
+        dynamic_color.b = 0.0f;
+        dynamic_color.a = alpha;
+
+        std_msgs::msg::ColorRGBA history_dynamic_color;
+        history_dynamic_color.r = 0.0f;
+        history_dynamic_color.g = 1.0f;
+        history_dynamic_color.b = 0.0f;
+        history_dynamic_color.a = history_alpha;
+
+        
 
         
 
@@ -474,8 +505,19 @@ namespace helperfunctions
 
                 // --- Set basic marker properties ---
                 marker.header = header;
-                marker.ns = marker_namespace;
                 marker.id = gaussian_id; 
+
+                if(gaussian.dynamic)
+                {
+                    marker.ns   = dynamic_ns;
+                    marker.color= dynamic_color;
+                }
+                else
+                {
+                    marker.ns   = static_ns;
+                    marker.color= static_color;
+                }
+
                 marker.type = visualization_msgs::msg::Marker::SPHERE; 
                 marker.action = visualization_msgs::msg::Marker::ADD; 
 
@@ -546,8 +588,6 @@ namespace helperfunctions
                 marker.scale.y = std::max(marker.scale.y, static_cast<double>(min_scale));
                 // marker.scale.z = std::max(marker.scale.z, static_cast<double>(min_scale)); 
                 marker.scale.z = std::max(marker.scale.z, static_cast<double>(0.25));   
-                // --- Set Color ---
-                marker.color = generateColorFromGaussianID(gaussian_id, alpha); 
 
                 // --- Set Lifetime ---
                 // 0 indicates infinite lifetime (marker will persist until deleted or replaced)
@@ -564,7 +604,7 @@ namespace helperfunctions
                 // creating text labels for the marker
                 visualization_msgs::msg::Marker text_marker;
                 text_marker.header  =   header;
-                text_marker.ns      =   label_namespace;
+                text_marker.ns      =   label_ns;
                 text_marker.id      =   gaussian_id;
                 text_marker.type    =   visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
                 text_marker.action  =   visualization_msgs::msg::Marker::ADD;
@@ -584,7 +624,7 @@ namespace helperfunctions
                                                                     marker.pose.position.y,
                                                                     marker.pose.position.z);
                 std::stringstream ss;
-                ss  << "dist: " << std::fixed << std::setprecision(2) << distance << " m";
+                ss  << std::fixed << std::setprecision(2) << distance << "m";
 
                 text_marker.text            =   ss.str();
 
@@ -592,7 +632,7 @@ namespace helperfunctions
             }    
         }
 
-        if (marker_queue.size() >= 20) 
+        if (marker_queue.size() >= history) 
         {
             marker_queue.pop_front();
         }
@@ -624,8 +664,17 @@ namespace helperfunctions
                 if(original_marker.type != visualization_msgs::msg::Marker::TEXT_VIEW_FACING)
                 {
                     visualization_msgs::msg::Marker history_marker  =   original_marker;
-                    history_marker.ns                               =   "history";
-                    history_marker.color                            =   generateColorFromGaussianID(-2, history_alpha);
+                    if(original_marker.ns == static_ns)
+                    {
+                        history_marker.ns                               =   history_static_ns;
+                        history_marker.color                            =   history_static_color;
+                    }
+                    else
+                    {
+                        history_marker.ns                               =   history_dynamic_ns;
+                        history_marker.color                            =   history_dynamic_color;   
+                    }
+                    
                     history_marker.id                               =   history_marker_id_counter;
                     history_marker_id_counter++;
                     marker_array.markers.push_back(history_marker);

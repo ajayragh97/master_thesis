@@ -17,7 +17,8 @@ namespace helperfunctions
                                                             const double& angle_min,
                                                             const double& angle_var_max,
                                                             const double& angle_var_min,
-                                                            const double& range_var);
+                                                            const double& range_var,
+                                                            const double& vel_thresh);
     void create_gaussian_ellipsoid_markers(const datastructures::GaussianMixture& gaussian_mixture, 
                                         const nav_msgs::msg::Odometry& odom_msg,
                                         visualization_msgs::msg::MarkerArray& marker_array, 
@@ -26,7 +27,8 @@ namespace helperfunctions
                                         const float& scale_factor,
                                         const float& min_scale,
                                         const float& alpha,
-                                        const float& history_alpha);    
+                                        const float& history_alpha,
+                                        const int& history);    
     std_msgs::msg::ColorRGBA generateColorFromGaussianID(int gaussian_id, float alpha);  
 }
 

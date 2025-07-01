@@ -5,8 +5,9 @@
       min_pts: 4
       msg_count: 1
     
-    input:
+    gaussian:
       intensity: rcs
+      velocity_threshold: 0.2
 
     map:
       cell_size: 0.5
@@ -25,6 +26,7 @@
     visualization:
       scale_factor: 3.0
       min_diameter: 0.1
+      history: 500
       history_alpha: 0.05
       alpha: 0.7
 
