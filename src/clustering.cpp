@@ -1,12 +1,15 @@
+#include <omp.h> 
 #include <chrono>
 #include <cmath>
 #include <Eigen/Geometry>
 #include <cstring>
 #include <random>
+#include <algorithm> 
 #include <tf2_ros/transform_broadcaster.h>
 #include <geometry_msgs/msg/transform_stamped.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 #include "rclcpp/rclcpp.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 #include "../include/master_thesis/datastructure.hpp"
@@ -59,7 +62,8 @@ class   ClustererNode :   public  rclcpp::Node
             num_cells       =   static_cast<int>(map_size/cell_size);
             grid_rows       =   num_cells;
             grid_cols       =   num_cells;
-            occ_grid        =   std::vector<std::vector<float>>(grid_rows, std::vector<float>(grid_cols, 0.5f));
+            occ_grid        =   std::vector<std::vector<double>>(grid_rows, std::vector<double>(grid_cols, 0.5));
+            grid_offset     =   map_size / 2.0;
 
 
             pcl_sub         =   this -> create_subscription<sensor_msgs::msg::PointCloud2>
@@ -76,6 +80,8 @@ class   ClustererNode :   public  rclcpp::Node
 
             odom_pub        =   this -> create_publisher<nav_msgs::msg::Odometry>("odom_corrected", rclcpp::SystemDefaultsQoS());
 
+            occ_grid_pub    =   this -> create_publisher<nav_msgs::msg::OccupancyGrid>("occ_grid", rclcpp::SystemDefaultsQoS());
+
             dynamic_tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
             static_tf_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
 
@@ -90,6 +96,7 @@ class   ClustererNode :   public  rclcpp::Node
         int grid_cols;
         int num_cells;
         int history;
+        double grid_offset;
         double eps;
         double angle_max;
         double angle_min;
@@ -111,7 +118,7 @@ class   ClustererNode :   public  rclcpp::Node
         bool origin_set =   false;
         datastructures::GaussianMixture unique_gaussians;
         datastructures::MarkerHistory marker_queue;
-        std::vector<std::vector<float>> occ_grid;
+        std::vector<std::vector<double>> occ_grid;
         nav_msgs::msg::Odometry odom_msg;
 
 
@@ -224,20 +231,10 @@ class   ClustererNode :   public  rclcpp::Node
                 // perform dbscan filtering 
                 auto start      =   std::chrono::high_resolution_clock::now();
                 dbscan          ->  fit(radar_data);
-                auto end        =   std::chrono::high_resolution_clock::now();
-                auto duration   = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-                // std::cout << "\ndata after dbscan (range, azimuth): (" << radar_data[0].range << ", " << radar_data[0].azimuth  << ")" << std::flush;
-                // std::cout << "dbscan time: " << duration.count() << " microseconds\n";
 
                 // Arranging data into defined datastructure
                 datastructures::ClusterMap cluster_data;
-                start           = std::chrono::high_resolution_clock::now();
-
                 cluster_data    = helperfunctions::create_dataframe(radar_data);
-                // std::cout << "\n data after dataframe creation (range, azimuth): (" << cluster_data[0].points[0].range << ", " << cluster_data[0].points[0].azimuth << ")" << std::flush;
-                end             = std::chrono::high_resolution_clock::now();
-                duration        = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-                // std::cout << "dataframe creation time: " << duration.count() << " microseconds\n";
                 
                 // creating the gaussian mixture from the clusters
                 datastructures::GaussianMixture gaussian_mixture;
@@ -245,19 +242,18 @@ class   ClustererNode :   public  rclcpp::Node
                 rclcpp::Time stamp  =   msg->header.stamp;
                 int total_points    =   radar_data.size();
 
-                // identifying unique clusters
+                
+                // The gaussian mixture is alkso a map representation. A parametric map.  
+                // If we want to visualize this in rviz the we have to convert it into a occupancy grid map
+                // helperfunctions::create_occ_grid(gaussian_mixture, odom_msg, occ_grid, grid_rows, grid_cols, cell_size, grid_offset);
 
-                if(unique_gaussians.empty())
-                {
-                    unique_gaussians    =   gaussian_mixture;
-                }
-                else
-                {
-                    // helperfunctions::update_unique_gaussians(unique_gaussians, gaussian_mixture);
-                }
-                publish_ellipsoid(gaussian_mixture, stamp);
-                publish_clustered_pointcloud(cluster_data, stamp);
+                // publish_ellipsoid(gaussian_mixture, stamp);
+                // publish_clustered_pointcloud(cluster_data, stamp);
+                // publish_occ_grid(stamp);
 
+                auto end        =   std::chrono::high_resolution_clock::now();
+                auto duration   = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                RCLCPP_INFO_STREAM(this->get_logger(), "Processing time: " << duration.count() << " microseconds");
                 radar_data.clear();
                 msg_count = 0;
             }
@@ -372,6 +368,41 @@ class   ClustererNode :   public  rclcpp::Node
             
         }
 
+        void publish_occ_grid(const rclcpp::Time& stamp)
+        {
+            nav_msgs::msg::OccupancyGrid grid_msg;
+
+            if(origin_set)
+            {
+                grid_msg.header.stamp               =   stamp;
+                grid_msg.header.frame_id            =   "map_corr";
+
+                grid_msg.info.resolution            =   cell_size;
+                grid_msg.info.height                =   grid_rows;
+                grid_msg.info.width                 =   grid_cols;
+                grid_msg.info.origin.position.x     =   odom_msg.pose.pose.position.x - grid_offset;
+                grid_msg.info.origin.position.y     =   odom_msg.pose.pose.position.y - grid_offset;
+                grid_msg.info.origin.position.z     =   0.0;
+                grid_msg.info.origin.orientation.w  =   1.0;
+
+                grid_msg.data.resize(grid_rows * grid_cols);
+
+                #pragma omp parallel for
+                for (int i = 0; i < grid_rows; ++i)
+                {
+                    for (int j = 0; j < grid_cols; ++j)
+                    {
+                        int8_t occ_val  =   static_cast<int8_t>(occ_grid[i][j] * 100.0f);
+                        grid_msg.data[i * grid_cols + j] =   occ_val;
+                    }
+                }
+
+                occ_grid_pub->publish(grid_msg);
+            }
+            
+
+        }
+
 
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr pcl_sub;
         rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub;
@@ -379,6 +410,7 @@ class   ClustererNode :   public  rclcpp::Node
         rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr ellipse_pub;
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_pub;
         rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub;
+        rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr occ_grid_pub;
         std::shared_ptr<tf2_ros::TransformBroadcaster> dynamic_tf_broadcaster_;
         std::shared_ptr<tf2_ros::StaticTransformBroadcaster> static_tf_broadcaster_;
 

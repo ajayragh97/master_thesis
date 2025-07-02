@@ -344,7 +344,8 @@ namespace helperfunctions
             gaussian.intensity          /= num_points;
             gaussian.noise              /= num_points;
             // The Gaussian weight is average rcs
-            gaussian.weight = rcs_sum / num_points;  
+            // gaussian.weight = rcs_sum / num_points;  
+            gaussian.weight     =   1.0;
 
             // calculate the final weighted covariance
             Eigen::Matrix3d mean_deviation_cov = Eigen::Matrix3d::Zero();
@@ -377,6 +378,12 @@ namespace helperfunctions
             }
 
             gaussian.cov                    =   mean_deviation_cov + weighted_point_cov_sum;
+
+            // ensuring that covariance matrix is not singular (since it is initialized to zero)
+            double epsilon = 1e-6; // A small positive value
+            Eigen::Matrix3d regularization_term = Eigen::Matrix3d::Identity() * epsilon;
+            gaussian.cov += regularization_term;
+
             gaussian.cov_inv                =   gaussian.cov.inverse();
             gaussian.norm_factor            =   1.0 / (std::pow(2.0 * M_PI, gaussian.centroid.cols() / 2.0) * std::sqrt(gaussian.cov.determinant()));
 
@@ -390,23 +397,21 @@ namespace helperfunctions
             
         }
 
-        // normalize the weights of the gaussians
-        double max_weight = 0.0, min_weight = INFINITY;
-        for (auto entry : gaussian_mixture)
+        // normalize the weights of the gaussians to ensure weights sum up to 1
+       double total_weight_sum = 0.0;
+        for (auto const& entry : gaussian_mixture) 
         {
-            if(entry.second.weight < min_weight)
+            total_weight_sum += entry.second.weight;
+        }
+
+        if (total_weight_sum > 0) 
+        {
+            for (auto& entry : gaussian_mixture) 
             {
-                min_weight = entry.second.weight;
-            }
-            if(entry.second.weight > max_weight)
-            {
-                max_weight = entry.second.weight;
+                entry.second.weight /= total_weight_sum; 
             }
         }
-        for (auto& entry : gaussian_mixture)
-        {
-            entry.second.weight = (entry.second.weight - min_weight) / (max_weight - min_weight); 
-        }
+
         
         return gaussian_mixture;
     }
@@ -684,10 +689,68 @@ namespace helperfunctions
         }  
     }
 
-    // void update_unique_gaussians(datastructures::GaussianMixture& unique_gaussians, datastructures::GaussianMixture& new_gaussians)
-    // {
-        
-    // }
+    double gmm_pdf(const double& x_cell_center, 
+                const double& y_cell_center, 
+                const datastructures::GaussianMixture& gaussian_mixture)
+    {
+        double pdf = 0.0;
+        Eigen::Vector3d query;
+        query << x_cell_center, y_cell_center, 0.0;
+
+        for(const auto& gaussian : gaussian_mixture)
+        {
+            Eigen::Vector3d diff        =   query - gaussian.second.centroid;
+            Eigen::MatrixXd exp_term    =   diff.transpose() * gaussian.second.cov_inv * diff;
+            double exponent             =   std::exp(-0.5 * exp_term(0,0));
+            pdf                         +=   gaussian.second.weight * (gaussian.second.norm_factor * exponent);
+        }
+
+        return pdf;
+    }
+
+    void create_occ_grid(const datastructures::GaussianMixture& gaussian_mixture,
+                         const nav_msgs::msg::Odometry& odom_msg,
+                         std::vector<std::vector<double>>& occ_grid,
+                         const int& grid_rows, 
+                         const int& grid_cols,
+                         const double& cell_size,
+                         const double& grid_offset)
+    {
+        double cell_area            =   cell_size * cell_size;
+        double max_pdf = 0.0;
+        double robot_x = odom_msg.pose.pose.position.x;
+        double robot_y = odom_msg.pose.pose.position.y;
+
+        #pragma omp parallel for
+        for(size_t i = 0; i < grid_rows; ++i)
+        {
+            for(size_t j = 0; j < grid_cols; ++j)
+            {
+                double x_cell_center    =   robot_x + (j * cell_size) - grid_offset + (cell_size / 2.0);
+                double y_cell_center    =   robot_y + (i * cell_size) - grid_offset + (cell_size / 2.0);
+                double pdf              =   gmm_pdf(x_cell_center, y_cell_center, gaussian_mixture);
+
+                occ_grid[i][j]          =   pdf;
+                if(pdf > max_pdf)
+                {
+                    max_pdf             =   pdf;
+                }
+
+            }
+        }
+
+
+        if (max_pdf > 1e-9) 
+        {
+            for(size_t i = 0; i < grid_rows; ++i)
+            {
+                for(size_t j = 0; j < grid_cols; ++j)
+                {
+                    occ_grid[i][j] /= max_pdf;
+                }
+            }
+        }
+    }
 }
 
 

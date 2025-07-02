@@ -9,6 +9,7 @@
 #include <sensor_msgs/msg/point_field.hpp>
 #include "nav_msgs/msg/odometry.hpp"
 
+
 namespace helperfunctions
 {
     datastructures::ClusterMap create_dataframe(std::vector<datastructures::Point>& points);
@@ -30,6 +31,13 @@ namespace helperfunctions
                                         const float& history_alpha,
                                         const int& history);    
     std_msgs::msg::ColorRGBA generateColorFromGaussianID(int gaussian_id, float alpha);  
+    void create_occ_grid(const datastructures::GaussianMixture& gaussian_mixture,
+                         const nav_msgs::msg::Odometry& odom_msg,
+                         std::vector<std::vector<double>>& occ_grid,
+                         const int& grid_rows, 
+                         const int& grid_cols,
+                         const double& cell_size,
+                         const double& grid_offset);
 }
 
 #endif

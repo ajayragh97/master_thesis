@@ -10,7 +10,7 @@
       velocity_threshold: 0.2
 
     map:
-      cell_size: 0.5
+      cell_size: 1.0
       cone_angle: 120.0
       map_size: 50.0
       max_distance: 15.0
