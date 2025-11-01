@@ -1,0 +1,191 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%   Thesis Proposal Template
+%   Based on the provided PDF example
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[11pt, a4paper]{article}
+
+%---------------------------------------------------------------------
+%   PREAMBLE
+%---------------------------------------------------------------------
+
+% PACKAGES FOR LAYOUT AND FONT
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage[margin=1.2in]{geometry} % Adjust margins as needed
+
+% PACKAGES FOR GRAPHICS AND COLOR
+\usepackage{graphicx}
+\usepackage[table]{xcolor} % For colored table cells (Gantt chart)
+
+% PACKAGES FOR HEADER AND FOOTER
+\usepackage{fancyhdr}
+
+% PACKAGES FOR MATH AND REFERENCES
+\usepackage{amsmath}
+\usepackage{hyperref} % For clickable links
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    filecolor=black,      
+    urlcolor=blue,
+    citecolor=black,
+}
+
+%---------------------------------------------------------------------
+%   HEADER AND FOOTER CONFIGURATION
+%---------------------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{} % Clear all header and footer fields
+\renewcommand{\headrulewidth}{0pt} % No header rule
+\renewcommand{\footrulewidth}{0pt} % No footer rule
+
+% Set the header
+\fancyhead[C]{\small Factor Graph Based Radar Inertial Odometry} % Your document title
+
+% Set the footer
+\fancyfoot[L]{\small Ajay Ragh} % Your name
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{\small Master Thesis Proposal} % Document type
+
+%---------------------------------------------------------------------
+%   DOCUMENT START
+%---------------------------------------------------------------------
+\begin{document}
+
+%---------------------------------------------------------------------
+%   TITLE PAGE
+%---------------------------------------------------------------------
+\begin{titlepage}
+    \centering
+    \thispagestyle{empty} % No header/footer on title page
+
+    % --- LOGOS ---
+    % Replace with your actual logo files and adjust width as needed
+    \begin{minipage}[t]{0.45\textwidth}
+        \flushleft
+        \includegraphics[width=0.8\textwidth]{logo-hbrs.png} 
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.45\textwidth}
+        \flushright
+        \includegraphics[width=0.5\textwidth]{logo-bit.png}
+    \end{minipage}
+    
+    \vspace{2cm}
+    
+    \includegraphics[width=0.2\textwidth]{logo-hrl.png}
+    
+    \vfill % Pushes content down
+    
+    % --- TITLE & AUTHOR ---
+    
+    {\large Master Thesis Proposal\par}
+    
+    \vspace{1.5cm}
+    
+    {\Huge \bfseries Graph Optimization for View \par Motion Planner\par}
+    
+    \vspace{1.5cm}
+    
+    {\large \textit{Allen Isaac Jose}\par}
+    
+    \vfill % Pushes content down
+    
+    % --- SUPERVISORS ---
+    
+    {Supervised by\par}
+    \vspace{0.5cm}
+    {Prof. Dr. Sebastian Houben\par}
+    {Prof. Dr. Maren Bennewitz\par}
+    {Sicong Pan, M.Sc.\par}
+    {Tobias Zaenker, M.Sc.\par}
+    
+    \vfill % Pushes content down
+    
+    % --- DATE ---
+    
+    {\large March 2024\par}
+    
+\end{titlepage}
+
+
+%---------------------------------------------------------------------
+%   MAIN CONTENT
+%---------------------------------------------------------------------
+
+\section{Introduction}
+Crop monitoring and understanding the phenology of crops are crucial for ensuring optimal yields and analyzing their anomalies. Typically, plants are cultivated in controlled environments such as glasshouses, which, due to their considerable size, make manual human monitoring a time-consuming task.
+
+This project addresses challenges in both coverage and total motion cost by proposing a graph optimization solution that generates the shortest motion cost path with maximum information gain under a given time budget.
+
+\section{Related Work}
+Next-Best View (NBV) methods[6] are commonly employed in active perception to target unknown voxels surrounding Region of Interest (ROI) contours and sample viewpoints capable of observing them. The local path planning method described above is adapted into a global view motion planning approach[7] through the construction of an undirected graph and by generating a sequence of view poses.
+
+\section{Project Plan}
+\subsection{Work Packages}
+\textbf{WP1 Literature review}
+\begin{itemize}
+    \item[T1.1] Gather literature on view motion planning methods.
+    \item[T1.2] Investigate into Set-Covering Problem, Travelling Salesman Problem, and Shortest Hamiltonian Path Problem.
+\end{itemize}
+
+\textbf{WP2 Simulation environment setup}
+\begin{itemize}
+    \item[T2.1] Setup the view motion planner framework [7].
+\end{itemize}
+
+\subsection{Project Schedule}
+
+% --- GANTT CHART FIGURE ---
+\begin{figure}[h!]
+    \centering
+    \caption{Project timeline}
+    \label{fig:timeline}
+    \setlength{\tabcolsep}{5pt} % Adjust column spacing
+    \renewcommand{\arraystretch}{1.5} % Adjust row height
+    \sffamily % Use a sans-serif font for the table
+    \begin{tabular}{l l c c c c c c}
+        \hline
+        \textbf{Task Description} & \textbf{Duration} & March & April & May & June & July & August \\
+        \hline
+        Literature review & 10 & \multicolumn{4}{>{\columncolor[HTML]{DC143C}}c}{} & & \\
+        Sim. env. setup & 8 & \multicolumn{1}{>{\columncolor[HTML]{DC143C}}c}{} & & & & & \\
+        Graph opt. integration & 18 & \multicolumn{1}{>{\columncolor[HTML]{DC143C}}c}{} & \multicolumn{1}{>{\columncolor[HTML]{DC143C}}c}{} & & & & \\
+        Evaluation & 12 & & & \multicolumn{2}{>{\columncolor[HTML]{228B22}}c}{} & & \\
+        Real-world experiments & 10 & & & & & & \multicolumn{1}{>{\columncolor[HTML]{6A5ACD}}c}{} \\
+        Project Report & 14 & & \multicolumn{5}{>{\columncolor[HTML]{1E90FF}}c}{} \\
+        \hline
+    \end{tabular}
+\end{figure}
+
+\subsection{Deliverables}
+\textbf{Minimum Viable}
+\begin{itemize}
+    \item Literature review on view motion planning.
+    \item Setup simulation environment of published view motion planner [7].
+    \item Final draft of the report.
+\end{itemize}
+
+%---------------------------------------------------------------------
+%   REFERENCES SECTION
+%---------------------------------------------------------------------
+
+% Using 'thebibliography' for manual bibliography management as in the PDF.
+% For larger documents, consider using BibTeX.
+\section*{References}
+\begin{thebibliography}{9}
+    \bibitem{hornung2013octomap}
+    Armin Hornung, Kai M. Wurm, Maren Bennewitz, Cyrill Stachniss, and Wolfram Burgard. OctoMap: An efficient probabilistic 3D mapping framework based on octrees. \textit{Autonomous Robots}, 34(3):189–206, Apr 2013.
+    
+    \bibitem{menon2023nbvsc}
+    Rohit Menon, Tobias Zaenker, Nils Dengler, and Maren Bennewitz. NBV-SC: Next Best View Planning Based on Shape Completion for Fruit Mapping and Reconstruction. In \textit{IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)}, pages 4197-4203, 2023.
+    
+    % Add other references here...
+    
+\end{thebibliography}
+
+\end{document}
