@@ -19,6 +19,7 @@
 
 % PACKAGES FOR GRAPHICS AND COLOR
 \usepackage{graphicx}
+\graphicspath{{./images/}}
 \usepackage[table]{xcolor} % For colored table cells (Gantt chart)
 
 % PACKAGES FOR HEADER AND FOOTER
@@ -67,17 +68,21 @@
     % Replace with your actual logo files and adjust width as needed
     \begin{minipage}[t]{0.45\textwidth}
         \flushleft
-        \includegraphics[width=0.8\textwidth]{logo-hbrs.png} 
+        \includegraphics[width=0.7\textwidth]{uni_bonn.png}
+        
     \end{minipage}
     \hfill
     \begin{minipage}[t]{0.45\textwidth}
         \flushright
-        \includegraphics[width=0.5\textwidth]{logo-bit.png}
+        \includegraphics[width=0.8\textwidth]{fkie.png}
     \end{minipage}
     
     \vspace{2cm}
     
-    \includegraphics[width=0.2\textwidth]{logo-hrl.png}
+    \begin{minipage}{\textwidth}
+    	\centering
+    	\hspace*{3cm}\includegraphics[width=0.3\textwidth]{igg.png}
+	\end{minipage}
     
     \vfill % Pushes content down
     
@@ -87,11 +92,11 @@
     
     \vspace{1.5cm}
     
-    {\Huge \bfseries Graph Optimization for View \par Motion Planner\par}
+    {\Huge \bfseries Factor Graph Based Radar Inertial Odometry\par}
     
     \vspace{1.5cm}
     
-    {\large \textit{Allen Isaac Jose}\par}
+    {\large \textit{Ajay Ragh}\par}
     
     \vfill % Pushes content down
     
@@ -99,16 +104,15 @@
     
     {Supervised by\par}
     \vspace{0.5cm}
-    {Prof. Dr. Sebastian Houben\par}
-    {Prof. Dr. Maren Bennewitz\par}
-    {Sicong Pan, M.Sc.\par}
-    {Tobias Zaenker, M.Sc.\par}
-    
+    {PD Dr. rer. nat. Lasse Klingbeil\par}
+    {M.Sc. Fahmi Rouatbi\par}
+    {M.Sc. Felix Esser\par}
+
     \vfill % Pushes content down
     
     % --- DATE ---
     
-    {\large March 2024\par}
+    {\large November 2025\par}
     
 \end{titlepage}
 
@@ -118,74 +122,115 @@
 %---------------------------------------------------------------------
 
 \section{Introduction}
-Crop monitoring and understanding the phenology of crops are crucial for ensuring optimal yields and analyzing their anomalies. Typically, plants are cultivated in controlled environments such as glasshouses, which, due to their considerable size, make manual human monitoring a time-consuming task.
 
-This project addresses challenges in both coverage and total motion cost by proposing a graph optimization solution that generates the shortest motion cost path with maximum information gain under a given time budget.
+\par For any robotic system navigating through the real world, it needs to answer a few questions. "What is the environment around it?" and "Where is it in this environment?". Based on the answers to these questions the system can then develop a plan to move through the environment. SLAM (\textbf{S}imultaneous \textbf{L}ocalization \textbf{A}nd \textbf{M}apping) is the mainstream approach that is used to solve this challenge by, as the name suggests, simultaneously localizing the system in a map of the environment that is being estimated simultaneously \cite{slam-handbook}. Sensors like camera, LIDAR (\textbf{L}ight \textbf{D}etection \textbf{A}nd \textbf{R}anging) are the most common means of sensing the environment. Coupled with sensors like IMU (\textbf{I}nertial \textbf{M}easurement \textbf{U}nit) and GPS (\textbf{G}lobal \textbf{P}ositioning \textbf{S}ystem), we are able to localize the system in the environment\cite{slam-handbook}. But what can be done when the system is being used in a GPS denied environment? What if the sensors like Camera/LIDAR face challenges in reliably sensing the environment?
 
+Weather conditions like heavy rain, snowfall, dense fog or other scenarios that emulate similar environmental conditions pose a challenge for reliable sensing to sensors like camera and LIDAR\cite{Filgueira2017QuantifyingTI}. Snow can create false detections in LIDAR and occlude the camera view, rain drops can distort the camera view and scatter laser beams leading to false detections in LIDAR. As a result, techniques that rely on these sensors degrades or fails to produce reliable measurements like odometry of the system.  
+
+This project aims to solve this particular challenge using RADAR (\textbf{R}adio \textbf{D}etection \textbf{A}nd \textbf{R}anging) sensors. RADAR sensors use radiowaves for obstacle detection and range measurements\cite{skolnik1962introduction}. By virtue of the wavelengths at which these sensor signals operate, these sensors are not susceptible to the challenges caused by snow, smoke, fog, rain etc like camera or LIDAR sensors. We aim to create a basic system using a combination of RADAR sensors and IMU to produce odometry measurement of the system. Currently available 4D mmWave radar sensors can provide us with measurements as pointclouds along with point level measurement of doppler velocity and intensity or RCS (\textbf{R}adar \textbf{C}ross
+\textbf{S}ection). In case of indoor scenarios, due to the presence of multipath reflections traditional point matching based techniques are challenging to be used with RADAR sensors\cite{Doer2021xRIORI}. Our approach is to use RADAR pointclouds from one or more sensors and then estimate the ego motion of the system by making use of a factor graph\cite{koller2009probabilistic} framework which combines estimated ego velocity from RADARs and IMU odometry. Additionally we investigate incorporating additional sensors like altimeter or barometer to improve the odometry estimation\cite{DoerENC2020}.
 \section{Related Work}
-Next-Best View (NBV) methods[6] are commonly employed in active perception to target unknown voxels surrounding Region of Interest (ROI) contours and sample viewpoints capable of observing them. The local path planning method described above is adapted into a global view motion planning approach[7] through the construction of an undirected graph and by generating a sequence of view poses.
+There are various types of radar sensors currently available in the market: single beam radars, scanning radars and single chip mmWave radar sensors\cite{Doer2021xRIORI}\cite{6127923}\cite{8126389}. Each of these radars sense the environment in slightly different ways but at it's core, the methodology remains the same. A radio wave is sent from the sensor which on hitting an obstacle gets reflected back. The reflected signal is the received by the sensor which is then processed to obtain information about the obstacle like doppler velocity, received signal power gives information regarding the radar cross section of the object, its position in space measured as range, azimuth and elevation(in case of latest 4D radar antenna arrays\cite{8546603}). 
 
-\section{Project Plan}
-\subsection{Work Packages}
-\textbf{WP1 Literature review}
-\begin{itemize}
-    \item[T1.1] Gather literature on view motion planning methods.
-    \item[T1.2] Investigate into Set-Covering Problem, Travelling Salesman Problem, and Shortest Hamiltonian Path Problem.
-\end{itemize}
-
-\textbf{WP2 Simulation environment setup}
-\begin{itemize}
-    \item[T2.1] Setup the view motion planner framework [7].
-\end{itemize}
-
-\subsection{Project Schedule}
-
-% --- GANTT CHART FIGURE ---
 \begin{figure}[h!]
     \centering
-    \caption{Project timeline}
-    \label{fig:timeline}
-    \setlength{\tabcolsep}{5pt} % Adjust column spacing
-    \renewcommand{\arraystretch}{1.5} % Adjust row height
-    \sffamily % Use a sans-serif font for the table
-    \begin{tabular}{l l c c c c c c}
-        \hline
-        \textbf{Task Description} & \textbf{Duration} & March & April & May & June & July & August \\
-        \hline
-        Literature review & 10 & \multicolumn{4}{>{\columncolor[HTML]{DC143C}}c}{} & & \\
-        Sim. env. setup & 8 & \multicolumn{1}{>{\columncolor[HTML]{DC143C}}c}{} & & & & & \\
-        Graph opt. integration & 18 & \multicolumn{1}{>{\columncolor[HTML]{DC143C}}c}{} & \multicolumn{1}{>{\columncolor[HTML]{DC143C}}c}{} & & & & \\
-        Evaluation & 12 & & & \multicolumn{2}{>{\columncolor[HTML]{228B22}}c}{} & & \\
-        Real-world experiments & 10 & & & & & & \multicolumn{1}{>{\columncolor[HTML]{6A5ACD}}c}{} \\
-        Project Report & 14 & & \multicolumn{5}{>{\columncolor[HTML]{1E90FF}}c}{} \\
-        \hline
-    \end{tabular}
+    \includegraphics[width=0.8\textwidth]{awr6843isk.png}
+    \caption{Image of an AWR6843ISK radar array SoC board from Texas Instrumentation}
+    \label{fig:awr6843isk}
 \end{figure}
+
+Navigation using radar sensors has become widely researched in the recent time periods, especially in the automobile industry. After the development of 4D mmWave antenna arrays it has become possible to obtain 3D measurement from radar sensors. These sensors can be available as light weight chips as seen in Figure~\ref{fig:awr6843isk}, which can be attached on systems like UAS (\textbf{U}nmanned \textbf{A}ircraft \textbf{S}ystems). Radar odometry using these sensors can be broadly classified into approaches that perform scan matching, perform instantaneous velocity estimatimation or hybrid techniques that combine both these together. 
+
+\textbf{Scan matching} based techniques are mostly techniques that are adapted from approaches used with LIDAR pointclouds. ICP (\textbf{I}terative \textbf{C}losest \textbf{P}oint) techniques\cite{segal2009generalized} and its variations like KISS-ICP\cite{vizzo2023kiss} are widely used techniques which work robustly on LIDAR pointclouds. In these approaches, consecutive scans are matched to estimate ego state changes between them\cite{aldera2019fast}\cite{almalioglu2020milli}\cite{rapp2015fast}. RADAR pointclouds are prone to multipath errors especially in indoor scenarios, outlier point detections etc. Additionally, compared to LIDAR pointclouds, these pointclouds are very sparse and as a result point matching techniques used for LIDAR data cannot provide robust results. There are recent works that try to account for this sparsity by aggregating RADAR scans and also taking into account doppler velocity information provided by RADAR sensors for scan matching\cite{10610311}.
+
+\textbf{Instantaneous velocity} estimation techniques makes use of the angle of arrival and doppler velocity information from a single scan to estimate the ego velocity\cite{9196666}\cite{DoerMFI2020}\cite{6728341}. The basic operating principle behind these techniques is to first filter out outliers and dynamic point detections in the pointcloud using techniques like RANSAC (\textbf{Ra}ndom \textbf{Sa}mple \textbf{C}onsensus) algorithm. Once we have only static points, the measured doppler velocity is basically a function of ego velocity and the angle of arrival between the radar sensor and the obstacle. Now, provided we have more than 3 such doppler velocity measurements, the ego velocity can be estimated using a Least Squares Estimation technique\cite{vstironja2024rave}\cite{do2024creve}.  
+
+\textbf{Hybrid techniques} uses a combination of scan matching or similar improved matching techniques\cite{Xiang2025VGCRIOAT} to estimate the pose changes between RADAR scans, instantaneously estimated ego velocity\cite{Doer2021xRIORI}, inertial sensor measurements\cite{do2024dero}, or other external sensor data and then fuse this information via optmization techniques or filters like EKF(\textbf{E}xtended \textbf{K}alman \textbf{F}ilter) or Factor Graphs\cite{yang2025ground}\cite{vstironja2025impact} to obtain robust ego odometry measurements. 
+\section{Problem Statement}
+
+The proposed project aims to develop a hybrid approach towards ego odometry estimation using a combination of RADAR pointclouds and IMU raw measurements. We follow the instantaneous ego velocity estimation technique followed in works \cite{DoerMFI2020}\cite{6728341} to obtain an estimated ego velocity. Then, we use the IMU raw measurements between two consecutive ego velocity estimation frames to perform IMU preintegration\cite{forster2015imu}. This provides us with change in state between the two frames. Both the ego velocity estimation and IMU state changes are then fused together using a Factor Graph framework\cite{koller2009probabilistic}. Additionally, since IMU preintegration results have higher errors in yaw estimation and height estimation, we investigate addition of barometer/altimeters as a source of height information and using scan matching techniques adapted for RADAR pointclouds to obtain a yaw estimate between the frames. 
+
+The factor graph will be implemented using GTSAM\cite{dellaert2012factor} which allows us to create the custom factors required for velocity,yaw,altitude measurements. The Figure~\ref{fig:factor_graph} illustrate the structure of the factor graph that we plan to implement. The optimization of the graph will be done using ISAM2\cite{kaess2012isam2} which is the current standard algorithm used for factor graph optimization when we are dealing with online scenarios. 
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=1.0\textwidth]{factor_graph.png}
+    \caption{Structure of the factor graph.X\textsubscript{i} denote Pose, V\textsubscript{i} denote Velocity and B\textsubscript{i} denote IMU bias variables respectively. f denotes the factor nodes described by the corresponding labels. In GTSAM\cite{dellaert2012factor} which we use to implement the factor graph we can combine Pose and Velocity into a single variable node called as Navigation State}
+    \label{fig:factor_graph}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.8\textwidth]{hardware.png}
+    \caption{Hardware setup consisting of two TI SoC radar sensor boards and an SBG Ellipse IMU}
+    \label{fig:hardware}
+\end{figure}
+
+We will develop our own hardware setup as seen in Figure~\ref{fig:hardware} using off the shelf SoC radar sensor chips and IMU sensors. Once the software implementation of the algorithm explained previously is completed we will evaluate the algorithm against groundtruth odometry available in publicly available datasets like ColoRadar\cite{kramer2022coloradar} which contains RADAR data collected using similar SoC RADAR chips in indoor and outdoor envbironments. Additionally we plan to collect our own data using our hardware along with groundtruth data to perform evaluation.  
+\section{Project Plan}
+\subsection{Work Packages}
+
+\textbf{WP1 Literature Review}
+\begin{itemize}
+    \item[T1.1] Gather literature on radar-inertial odometry techniques, factor graphs, sensor fusion approaches.
+    \item[T1.2] Investigate instantaneous velocity estimation techniques, scan matching approaches adapted for radar data and IMU preintegration.
+    \item[T1.3] Investigate graph optimization techniques. 
+\end{itemize}
+\textbf{WP2 Code Implementation}
+\begin{itemize}
+	\item[T2.1] Setup Radar Ego Velocity Estimator code.
+    \item[T2.2] Setup scan matching based yaw estimation code.
+    \item[T2.3] Setup GTSAM and implemet the factor graph.
+    \item[T2.4] Define error calculation logic for Altitude, Velocity and Yaw angle measurements.
+    \item[T2.5] Create the custom factors based on the defined error calculation logic.
+    \item[T2.6] Debug and test implemtation with datasets and online ROS data.
+\end{itemize}
+\textbf{WP3 Evaluation with Public Datasets}
+\begin{itemize}
+	\item[T3.1] Identify and define evaluation metrics.
+	\item[T3.2] Evaluate with public datasets like ColoRadar\cite{kramer2022coloradar}.
+	\item[T3.3] Visualize and analyze the evaluation results.
+\end{itemize}
+\textbf{WP4 Evaluation with own data}
+\begin{itemize}
+	\item[T4.1] Collect data with own hardware indoors and outdoors along with groundtruth data.
+	\item[T4.2] Perform evaluation based on the error metrics.
+	\item[T4.3] Visualize and analyze the evaluation results.
+\end{itemize}
+\textbf{WP5 Project Report}
+\begin{itemize}
+	\item[T5.1] Create initial draft.
+	\item[T5.2] Collect supervisor reviews.
+	\item[T5.3] Refine the report.
+	\item[T5.4] Final report submission
+\end{itemize}
+
+%\subsection{Project Schedule}
 
 \subsection{Deliverables}
 \textbf{Minimum Viable}
 \begin{itemize}
-    \item Literature review on view motion planning.
-    \item Setup simulation environment of published view motion planner [7].
+    \item Literature review completed.
+    \item Setup proposed factor graph implementation with radar ego velocity and imu preintegration factors.
+    \item Evaluate implementation with public datasets.
     \item Final draft of the report.
+\end{itemize}
+\textbf{Expected}
+\begin{itemize}
+	\item All minimum viable deliverables.
+	\item Implement custom factors for altimeter and yaw measurement.
+\end{itemize}
+\textbf{Desired}
+\begin{itemize}
+	\item All expected deliverables.
+	\item Data collection with own hardware setup including groundtruth.
+	\item Evaluation with collected groundtruth.
 \end{itemize}
 
 %---------------------------------------------------------------------
 %   REFERENCES SECTION
 %---------------------------------------------------------------------
 
-% Using 'thebibliography' for manual bibliography management as in the PDF.
-% For larger documents, consider using BibTeX.
-\section*{References}
-\begin{thebibliography}{9}
-    \bibitem{hornung2013octomap}
-    Armin Hornung, Kai M. Wurm, Maren Bennewitz, Cyrill Stachniss, and Wolfram Burgard. OctoMap: An efficient probabilistic 3D mapping framework based on octrees. \textit{Autonomous Robots}, 34(3):189–206, Apr 2013.
-    
-    \bibitem{menon2023nbvsc}
-    Rohit Menon, Tobias Zaenker, Nils Dengler, and Maren Bennewitz. NBV-SC: Next Best View Planning Based on Shape Completion for Fruit Mapping and Reconstruction. In \textit{IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)}, pages 4197-4203, 2023.
-    
-    % Add other references here...
-    
-\end{thebibliography}
-
+\bibliographystyle{ieeetr} 
+\bibliography{references}
 \end{document}

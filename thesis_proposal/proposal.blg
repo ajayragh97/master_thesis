@@ -1,0 +1,49 @@
+This is BibTeX, Version 0.99d (TeX Live 2022/dev/Debian)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: proposal.aux
+The style file: ieeetr.bst
+Database file #1: references.bib
+Warning--can't use both volume and number fields in segal2009generalized
+Warning--empty journal in forster2015imu
+You've used 28 entries,
+            1876 wiz_defined-function locations,
+            636 strings with 9443 characters,
+and the built_in function-call counts, 8748 in all, are:
+= -- 807
+> -- 403
+< -- 0
++ -- 144
+- -- 116
+* -- 633
+:= -- 1221
+add.period$ -- 30
+call.type$ -- 28
+change.case$ -- 26
+chr.to.int$ -- 0
+cite$ -- 30
+duplicate$ -- 464
+empty$ -- 825
+format.name$ -- 116
+if$ -- 2142
+int.to.chr$ -- 0
+int.to.str$ -- 28
+missing$ -- 29
+newline$ -- 89
+num.names$ -- 29
+pop$ -- 123
+preamble$ -- 1
+purify$ -- 0
+quote$ -- 0
+skip$ -- 309
+stack$ -- 0
+substring$ -- 585
+swap$ -- 192
+text.length$ -- 0
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 0
+warning$ -- 2
+while$ -- 76
+width$ -- 30
+write$ -- 270
+(There were 2 warnings)

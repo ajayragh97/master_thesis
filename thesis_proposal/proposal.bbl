@@ -1,0 +1,149 @@
+\begin{thebibliography}{10}
+
+\bibitem{slam-handbook}
+L.~Carlone, A.~Kim, T.~Barfoot, D.~Cremers, and F.~Dellaert, eds., {\em {SLAM
+  Handbook.} From Localization and Mapping to Spatial Intelligence}.
+\newblock Cambridge University Press, 2026.
+
+\bibitem{Filgueira2017QuantifyingTI}
+A.~A. Filgueira, H.~Gonz{\'a}lez-Jorge, S.~Lag{\"u}ela,
+  L.~D{\'i}az-Vilari{\~n}o, and P.~Arias, ``Quantifying the influence of rain
+  in lidar performance,'' {\em Measurement}, vol.~95, pp.~143--148, 2017.
+
+\bibitem{skolnik1962introduction}
+M.~I. Skolnik, ``Introduction to radar,'' {\em Radar handbook}, vol.~2, p.~21,
+  1962.
+
+\bibitem{Doer2021xRIORI}
+C.~Doer and G.~Trommer, ``x-rio: Radar inertial odometry with multiple radar
+  sensors and yaw aiding,'' {\em Gyroscopy and Navigation}, vol.~12, pp.~329 --
+  339, 2021.
+
+\bibitem{koller2009probabilistic}
+D.~Koller and N.~Friedman, {\em Probabilistic graphical models: principles and
+  techniques}.
+\newblock MIT press, 2009.
+
+\bibitem{DoerENC2020}
+C.~Doer and G.~F. Trommer, ``Radar inertial odometry with online calibration,''
+  in {\em 2020 European Navigation Conference (ENC)}, pp.~1--10, 2020.
+
+\bibitem{6127923}
+J.~Hasch, E.~Topak, R.~Schnabel, T.~Zwick, R.~Weigel, and C.~Waldschmidt,
+  ``Millimeter-wave technology for automotive radar sensors in the 77 ghz
+  frequency band,'' {\em IEEE Transactions on Microwave Theory and Techniques},
+  vol.~60, no.~3, pp.~845--860, 2012.
+
+\bibitem{8126389}
+J.~Steinbaeck, C.~Steger, G.~Holweg, and N.~Druml, ``Next generation radar
+  sensors in automotive sensor fusion systems,'' in {\em 2017 Sensor Data
+  Fusion: Trends, Solutions, Applications (SDF)}, pp.~1--6, 2017.
+
+\bibitem{8546603}
+M.~Stolz, M.~Wolf, F.~Meinl, M.~Kunert, and W.~Menzel, ``A new antenna array
+  and signal processing concept for an automotive 4d radar,'' in {\em 2018 15th
+  European Radar Conference (EuRAD)}, pp.~63--66, 2018.
+
+\bibitem{segal2009generalized}
+A.~Segal, D.~Haehnel, and S.~Thrun, ``Generalized-icp.,'' in {\em Robotics:
+  science and systems}, vol.~2, p.~435, Seattle, WA, 2009.
+
+\bibitem{vizzo2023kiss}
+I.~Vizzo, T.~Guadagnino, B.~Mersch, L.~Wiesmann, J.~Behley, and C.~Stachniss,
+  ``Kiss-icp: In defense of point-to-point icp--simple, accurate, and robust
+  registration if done the right way,'' {\em IEEE Robotics and Automation
+  Letters}, vol.~8, no.~2, pp.~1029--1036, 2023.
+
+\bibitem{aldera2019fast}
+R.~Aldera, D.~De~Martini, M.~Gadd, and P.~Newman, ``Fast radar motion
+  estimation with a learnt focus of attention using weak supervision,'' in {\em
+  2019 international conference on robotics and automation (ICRA)},
+  pp.~1190--1196, IEEE, 2019.
+
+\bibitem{almalioglu2020milli}
+Y.~Almalioglu, M.~Turan, C.~X. Lu, N.~Trigoni, and A.~Markham, ``Milli-rio:
+  Ego-motion estimation with low-cost millimetre-wave radar,'' {\em IEEE
+  Sensors Journal}, vol.~21, no.~3, pp.~3314--3323, 2020.
+
+\bibitem{rapp2015fast}
+M.~Rapp, M.~Barjenbruch, K.~Dietmayer, M.~Hahn, and J.~Dickmann, ``A fast
+  probabilistic ego-motion estimation framework for radar,'' in {\em 2015
+  European Conference on Mobile Robots (ECMR)}, pp.~1--6, IEEE, 2015.
+
+\bibitem{10610311}
+D.~C. Herraez, M.~Zeller, L.~Chang, I.~Vizzo, M.~Heidingsfeld, and
+  C.~Stachniss, ``Radar-only odometry and mapping for autonomous vehicles,'' in
+  {\em 2024 IEEE International Conference on Robotics and Automation (ICRA)},
+  pp.~10275--10282, 2024.
+
+\bibitem{9196666}
+A.~Kramer, C.~Stahoviak, A.~Santamaria-Navarro, A.-a. Agha-mohammadi, and
+  C.~Heckman, ``Radar-inertial ego-velocity estimation for visually degraded
+  environments,'' in {\em 2020 IEEE International Conference on Robotics and
+  Automation (ICRA)}, pp.~5739--5746, 2020.
+
+\bibitem{DoerMFI2020}
+C.~Doer and G.~F. Trommer, ``An ekf based approach to radar inertial
+  odometry,'' in {\em 2020 IEEE International Conference on Multisensor Fusion
+  and Integration for Intelligent Systems (MFI)}, pp.~152--159, 2020.
+
+\bibitem{6728341}
+D.~Kellner, M.~Barjenbruch, J.~Klappstein, J.~Dickmann, and K.~Dietmayer,
+  ``Instantaneous ego-motion estimation using doppler radar,'' in {\em 16th
+  International IEEE Conference on Intelligent Transportation Systems (ITSC
+  2013)}, pp.~869--874, 2013.
+
+\bibitem{vstironja2024rave}
+V.-J. {\v{S}}tironja, L.~Petrovi{\'c}, J.~Per{\v{s}}i{\'c}, I.~Markovi{\'c},
+  and I.~Petrovi{\'c}, ``Rave: A framework for radar ego-velocity estimation,''
+  in {\em 2024 IEEE International Conference on Multisensor Fusion and
+  Integration for Intelligent Systems (MFI)}, pp.~1--6, IEEE, 2024.
+
+\bibitem{do2024creve}
+H.~V. Do, B.~S. Ko, Y.~H. Kim, and J.~W. Song, ``Creve: An acceleration-based
+  constraint approach for robust radar ego-velocity estimation,'' {\em arXiv
+  preprint arXiv:2409.16847}, 2024.
+
+\bibitem{Xiang2025VGCRIOAT}
+J.~Xiang, X.~He, Z.~Chen, L.~Zhang, X.~Luo, and J.~Mao, ``Vgc-rio: A tightly
+  integrated radar-inertial odometry with spatial weighted doppler velocity and
+  local geometric constrained rcs histograms,'' {\em IEEE Robotics and
+  Automation Letters}, vol.~10, pp.~11642--11649, 2025.
+
+\bibitem{do2024dero}
+H.~V. Do, Y.~H. Kim, J.~H. Lee, M.~H. Lee, and J.~W. Song, ``Dero: Dead
+  reckoning based on radar odometry with accelerometers aided for robot
+  localization,'' in {\em 2024 IEEE/RSJ International Conference on Intelligent
+  Robots and Systems (IROS)}, pp.~8547--8554, IEEE, 2024.
+
+\bibitem{yang2025ground}
+W.~Yang, H.~Jang, and A.~Kim, ``Ground-optimized 4d radar-inertial odometry via
+  continuous velocity integration using gaussian process,'' {\em arXiv preprint
+  arXiv:2502.08093}, 2025.
+
+\bibitem{vstironja2025impact}
+V.-J. {\v{S}}tironja, L.~Petrovi{\'c}, J.~Per{\v{s}}i{\'c}, I.~Markovi{\'c},
+  and I.~Petrovi{\'c}, ``Impact of temporal delay on radar-inertial odometry,''
+  {\em arXiv preprint arXiv:2503.02509}, 2025.
+
+\bibitem{forster2015imu}
+C.~Forster, L.~Carlone, F.~Dellaert, and D.~Scaramuzza, ``Imu preintegration on
+  manifold for efficient visual-inertial maximum-a-posteriori estimation,''
+  2015.
+
+\bibitem{dellaert2012factor}
+F.~Dellaert, ``Factor graphs and gtsam: A hands-on introduction,'' {\em Georgia
+  Institute of Technology, Tech. Rep}, vol.~2, no.~4, 2012.
+
+\bibitem{kaess2012isam2}
+M.~Kaess, H.~Johannsson, R.~Roberts, V.~Ila, J.~J. Leonard, and F.~Dellaert,
+  ``isam2: Incremental smoothing and mapping using the bayes tree,'' {\em The
+  International Journal of Robotics Research}, vol.~31, no.~2, pp.~216--235,
+  2012.
+
+\bibitem{kramer2022coloradar}
+A.~Kramer, K.~Harlow, C.~Williams, and C.~Heckman, ``Coloradar: The direct 3d
+  millimeter wave radar dataset,'' {\em The International Journal of Robotics
+  Research}, vol.~41, no.~4, pp.~351--360, 2022.
+
+\end{thebibliography}

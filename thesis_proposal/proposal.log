@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=pdflatex 2025.2.8)  1 NOV 2025 11:22
+This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=pdflatex 2025.2.8)  2 NOV 2025 22:51
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -334,34 +334,35 @@ Package uniquecounter Info: New unique counter `rerunfilecheck' on input line 2
 )
 \Hy@SectionHShift=\skip64
 )
-Package hyperref Info: Option `colorlinks' set `true' on input line 36.
+Package hyperref Info: Option `colorlinks' set `true' on input line 37.
 
 (/usr/share/texlive/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
 File: l3backend-pdftex.def 2022-01-12 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count287
 \l__pdf_internal_box=\box54
 )
-No file proposal.aux.
+(./proposal.aux)
 \openout1 = `proposal.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 57.
-LaTeX Font Info:    ... okay on input line 57.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 57.
-LaTeX Font Info:    ... okay on input line 57.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 57.
-LaTeX Font Info:    ... okay on input line 57.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 57.
-LaTeX Font Info:    ... okay on input line 57.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 57.
-LaTeX Font Info:    ... okay on input line 57.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 57.
-LaTeX Font Info:    ... okay on input line 57.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 57.
-LaTeX Font Info:    ... okay on input line 57.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 57.
-LaTeX Font Info:    ... okay on input line 57.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 57.
-LaTeX Font Info:    ... okay on input line 57.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 58.
+LaTeX Font Info:    ... okay on input line 58.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 58.
+LaTeX Font Info:    ... okay on input line 58.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 58.
+LaTeX Font Info:    ... okay on input line 58.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 58.
+LaTeX Font Info:    ... okay on input line 58.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 58.
+LaTeX Font Info:    ... okay on input line 58.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 58.
+LaTeX Font Info:    ... okay on input line 58.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 58.
+LaTeX Font Info:    ... okay on input line 58.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 58.
+LaTeX Font Info:    ... okay on input line 58.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 58.
+LaTeX Font Info:    ... okay on input line 58.
+
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
 *geometry* verbose mode - [ preamble ] result:
@@ -418,7 +419,7 @@ Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 4
 File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
 e
 ))
-Package hyperref Info: Link coloring ON on input line 57.
+Package hyperref Info: Link coloring ON on input line 58.
 
 (/usr/share/texlive/texmf-dist/tex/latex/hyperref/nameref.sty
 Package: nameref 2021-04-02 v2.47 Cross-referencing by name of section
@@ -431,119 +432,91 @@ Package: gettitlestring 2019/12/15 v1.6 Cleanup title references (HO)
 )
 \c@section@level=\count294
 )
-LaTeX Info: Redefining \ref on input line 57.
-LaTeX Info: Redefining \pageref on input line 57.
-LaTeX Info: Redefining \nameref on input line 57.
+LaTeX Info: Redefining \ref on input line 58.
+LaTeX Info: Redefining \pageref on input line 58.
+LaTeX Info: Redefining \nameref on input line 58.
+
+(./proposal.out) (./proposal.out)
 \@outlinefile=\write3
 \openout3 = `proposal.out'.
 
+<./images//uni_bonn.png, id=28, 196.735pt x 78.2925pt>
+File: ./images//uni_bonn.png Graphic file (type png)
+<use ./images//uni_bonn.png>
+Package pdftex.def Info: ./images//uni_bonn.png  used on input line 71.
+(pdftex.def)             Requested size: 133.5775pt x 53.15814pt.
+<./images//fkie.png, id=30, 258.9675pt x 72.27pt>
+File: ./images//fkie.png Graphic file (type png)
+<use ./images//fkie.png>
+Package pdftex.def Info: ./images//fkie.png  used on input line 77.
+(pdftex.def)             Requested size: 152.66125pt x 42.60472pt.
+<./images//igg.png, id=31, 194.7275pt x 76.285pt>
+File: ./images//igg.png Graphic file (type png)
+<use ./images//igg.png>
+Package pdftex.def Info: ./images//igg.png  used on input line 84.
+(pdftex.def)             Requested size: 127.21939pt x 49.83841pt.
+ [1
+
+{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map} <./images//uni_bonn.png> <.
+/images//fkie.png> <./images//igg.png>]
+<./images//awr6843isk.png, id=55, 642.4pt x 361.35pt>
+File: ./images//awr6843isk.png Graphic file (type png)
+<use ./images//awr6843isk.png>
+Package pdftex.def Info: ./images//awr6843isk.png  used on input line 137.
+(pdftex.def)             Requested size: 339.24956pt x 190.83089pt.
 
 
-LaTeX Warning: File `logo-hbrs.png' not found on input line 70.
+LaTeX Warning: `!h' float specifier changed to `!ht'.
 
-
-! Package pdftex.def Error: File `logo-hbrs.png' not found: using draft setting
-.
-
-See the pdftex.def package documentation for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.70 ...aphics[width=0.8\textwidth]{logo-hbrs.png}
-                                                  
-Try typing  <return>  to proceed.
-If that doesn't work, type  X <return>  to quit.
-
-LaTeX Font Info:    Trying to load font information for T1+cmtt on input line 7
-0.
-(/usr/share/texlive/texmf-dist/tex/latex/base/t1cmtt.fd
-File: t1cmtt.fd 2019/12/16 v2.5j Standard LaTeX font definitions
-)
-
-LaTeX Warning: File `logo-bit.png' not found on input line 75.
-
-
-! Package pdftex.def Error: File `logo-bit.png' not found: using draft setting.
-
-
-See the pdftex.def package documentation for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.75 ...raphics[width=0.5\textwidth]{logo-bit.png}
-                                                  
-Try typing  <return>  to proceed.
-If that doesn't work, type  X <return>  to quit.
-
-
-LaTeX Warning: File `logo-hrl.png' not found on input line 80.
-
-
-! Package pdftex.def Error: File `logo-hrl.png' not found: using draft setting.
-
-
-See the pdftex.def package documentation for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.80 ...raphics[width=0.2\textwidth]{logo-hrl.png}
-                                                  
-Try typing  <return>  to proceed.
-If that doesn't work, type  X <return>  to quit.
-
-[1
-
-{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}]
-LaTeX Font Info:    Trying to load font information for T1+cmss on input line 1
-50.
-
-(/usr/share/texlive/texmf-dist/tex/latex/base/t1cmss.fd
-File: t1cmss.fd 2019/12/16 v2.5j Standard LaTeX font definitions
-)pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has
- been already used, duplicate ignored
+pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has 
+been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.169     \item S
-                 etup simulation environment of published view motion planne...
-[1] [2] (./proposal.aux)
+l.143 
+       [1] [2 <./images//awr6843isk.png>]
+<./images//factor_graph.png, id=116, 1716.4125pt x 833.1125pt>
+File: ./images//factor_graph.png Graphic file (type png)
+<use ./images//factor_graph.png>
+Package pdftex.def Info: ./images//factor_graph.png  used on input line 157.
+(pdftex.def)             Requested size: 424.06033pt x 205.82414pt.
+<./images//hardware.png, id=119, 569.12625pt x 295.1025pt>
+File: ./images//hardware.png Graphic file (type png)
+<use ./images//hardware.png>
+Package pdftex.def Info: ./images//hardware.png  used on input line 164.
+(pdftex.def)             Requested size: 339.24956pt x 175.91461pt.
 
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
 
+LaTeX Warning: `!h' float specifier changed to `!ht'.
 
-Package rerunfilecheck Warning: File `proposal.out' has changed.
-(rerunfilecheck)                Rerun to get outlines right
-(rerunfilecheck)                or use package `bookmark'.
-
-Package rerunfilecheck Info: Checksums for `proposal.out':
-(rerunfilecheck)             Before: <no file>
-(rerunfilecheck)             After:  D0CF8827EF4513651AB28AC8F71AEC98;697.
+[3 <./images//factor_graph.png>] [4 <./images//hardware.png>] (./proposal.bbl
+[5] [6]) [7] (./proposal.aux)
+Package rerunfilecheck Info: File `proposal.out' has not changed.
+(rerunfilecheck)             Checksum: 25CF6D827984408A547FEC15CD239EEE;688.
  ) 
 Here is how much of TeX's memory you used:
- 11367 strings out of 480204
- 177348 string characters out of 5895011
- 493741 words of memory out of 5000000
- 29143 multiletter control sequences out of 15000+600000
- 483192 words of font info for 55 fonts, out of 8000000 for 9000
+ 11350 strings out of 480204
+ 176357 string characters out of 5895011
+ 496572 words of memory out of 5000000
+ 29101 multiletter control sequences out of 15000+600000
+ 482094 words of font info for 53 fonts, out of 8000000 for 9000
  36 hyphenation exceptions out of 8191
- 60i,11n,63p,425b,410s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 60i,11n,63p,1165b,474s stack positions out of 5000i,500n,10000p,200000b,80000s
  </home/ajay/.texlive2021/texmf-var/fonts/pk/ljfour/jknappen/ec/ecti1095.600p
 k> </home/ajay/.texlive2021/texmf-var/fonts/pk/ljfour/jknappen/ec/tcrm1095.600p
-k> </home/ajay/.texlive2021/texmf-var/fonts/pk/ljfour/jknappen/ec/ecss1095.600p
-k> </home/ajay/.texlive2021/texmf-var/fonts/pk/ljfour/jknappen/ec/ecsx1095.600p
-k> </home/ajay/.texlive2021/texmf-var/fonts/pk/ljfour/jknappen/ec/ecbx1095.600p
 k> </home/ajay/.texlive2021/texmf-var/fonts/pk/ljfour/jknappen/ec/ecbx1200.600p
+k> </home/ajay/.texlive2021/texmf-var/fonts/pk/ljfour/jknappen/ec/ecrm0800.600p
+k> </home/ajay/.texlive2021/texmf-var/fonts/pk/ljfour/jknappen/ec/ecbx1095.600p
 k> </home/ajay/.texlive2021/texmf-var/fonts/pk/ljfour/jknappen/ec/ecbx1440.600p
 k> </home/ajay/.texlive2021/texmf-var/fonts/pk/ljfour/jknappen/ec/ecrm1000.600p
 k> </home/ajay/.texlive2021/texmf-var/fonts/pk/ljfour/jknappen/ec/ecrm1095.600p
 k> </home/ajay/.texlive2021/texmf-var/fonts/pk/ljfour/jknappen/ec/ecti1200.600p
 k> </home/ajay/.texlive2021/texmf-var/fonts/pk/ljfour/jknappen/ec/ecbx2488.600p
 k> </home/ajay/.texlive2021/texmf-var/fonts/pk/ljfour/jknappen/ec/ecrm1200.600p
-k> </home/ajay/.texlive2021/texmf-var/fonts/pk/ljfour/jknappen/ec/ectt1095.600p
 k>
-Output written on proposal.pdf (3 pages, 95903 bytes).
+Output written on proposal.pdf (8 pages, 619341 bytes).
 PDF statistics:
- 385 PDF objects out of 1000 (max. 8388607)
- 80 compressed objects within 1 object stream
- 14 named destinations out of 1000 (max. 500000)
- 1 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 521 PDF objects out of 1000 (max. 8388607)
+ 182 compressed objects within 2 object streams
+ 46 named destinations out of 1000 (max. 500000)
+ 79 words of extra memory for PDF output out of 10000 (max. 10000000)
 
