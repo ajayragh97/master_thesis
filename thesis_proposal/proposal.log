@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=pdflatex 2025.2.8)  2 NOV 2025 22:51
+This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=pdflatex 2025.11.3)  3 NOV 2025 11:32
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -474,11 +474,11 @@ been already used, duplicate ignored
                    \relax 
 l.143 
        [1] [2 <./images//awr6843isk.png>]
-<./images//factor_graph.png, id=116, 1716.4125pt x 833.1125pt>
+<./images//factor_graph.png, id=116, 1716.4125pt x 821.0675pt>
 File: ./images//factor_graph.png Graphic file (type png)
 <use ./images//factor_graph.png>
 Package pdftex.def Info: ./images//factor_graph.png  used on input line 157.
-(pdftex.def)             Requested size: 424.06033pt x 205.82414pt.
+(pdftex.def)             Requested size: 424.06033pt x 202.84837pt.
 <./images//hardware.png, id=119, 569.12625pt x 295.1025pt>
 File: ./images//hardware.png Graphic file (type png)
 <use ./images//hardware.png>
@@ -495,7 +495,7 @@ Package rerunfilecheck Info: File `proposal.out' has not changed.
  ) 
 Here is how much of TeX's memory you used:
  11350 strings out of 480204
- 176357 string characters out of 5895011
+ 176357 string characters out of 5895010
  496572 words of memory out of 5000000
  29101 multiletter control sequences out of 15000+600000
  482094 words of font info for 53 fonts, out of 8000000 for 9000
@@ -513,7 +513,7 @@ k> </home/ajay/.texlive2021/texmf-var/fonts/pk/ljfour/jknappen/ec/ecti1200.600p
 k> </home/ajay/.texlive2021/texmf-var/fonts/pk/ljfour/jknappen/ec/ecbx2488.600p
 k> </home/ajay/.texlive2021/texmf-var/fonts/pk/ljfour/jknappen/ec/ecrm1200.600p
 k>
-Output written on proposal.pdf (8 pages, 619341 bytes).
+Output written on proposal.pdf (8 pages, 618980 bytes).
 PDF statistics:
  521 PDF objects out of 1000 (max. 8388607)
  182 compressed objects within 2 object streams
