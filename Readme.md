@@ -7,3 +7,8 @@ We perform a gaussian based probabilistic mapping approach to account for the pr
     <source src="/outputs/rainy_seq.mp4" type="video/mp4">
     Your browser does not support video tag.
 </video>
+
+
+https://github.com/user-attachments/assets/13dfae60-fa7c-4951-be41-228b8391a64a
+
+
