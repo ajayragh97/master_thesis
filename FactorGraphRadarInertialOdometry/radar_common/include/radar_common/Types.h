@@ -81,7 +81,7 @@ namespace radar
     */
     struct OptimizationFrame
     {
-        // TIme stamp of radar frame
+        // Time stamp of radar frame
         double timestamp;
 
         // All IMU measurements
@@ -92,6 +92,7 @@ namespace radar
 
         // Delta yaw estimated from radar frame
         double delta_yaw;
+        double delta_yaw_fitness;
 
         // Flags
         bool has_reve_velocity = false;

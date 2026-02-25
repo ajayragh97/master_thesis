@@ -16,8 +16,9 @@ using namespace radar::common;
 using namespace radar::velocity;
 using namespace radar::registration;
 
-// --- Helper Functions (Same as before) ---
-void computePolarAndDirection(RadarTarget& target) {
+// --- Helper Functions ---
+void computePolarAndDirection(RadarTarget& target) 
+{
     const double x = target.position_cart.x();
     const double y = target.position_cart.y();
     const double z = target.position_cart.z();
@@ -32,7 +33,8 @@ void computePolarAndDirection(RadarTarget& target) {
     target.position_sph[2] = std::atan2(z, horizontal_dist);
 }
 
-PointCloud loadPointCloud(const std::string& filename) {
+PointCloud loadPointCloud(const std::string& filename) 
+{
     PointCloud cloud;
     std::ifstream file(filename, std::ios::binary);
     if (!file.is_open()) return cloud;
@@ -52,14 +54,16 @@ PointCloud loadPointCloud(const std::string& filename) {
     return cloud;
 }
 
-std::vector<double> loadTimestamps(const std::string& path) {
+std::vector<double> loadTimestamps(const std::string& path) 
+{
     std::vector<double> timestamps;
     std::ifstream file(path); std::string line;
     while(std::getline(file, line)) if (!line.empty()) timestamps.push_back(std::stod(line));
     return timestamps;
 }
 
-PointCloud filterDynamicPoints(const PointCloud& input, const Eigen::Vector3d& ego_vel, double threshold = 0.5) {
+PointCloud filterDynamicPoints(const PointCloud& input, const Eigen::Vector3d& ego_vel, double threshold = 0.5) 
+{
     PointCloud static_cloud; static_cloud.reserve(input.size());
     for(const auto& p : input) {
         double expected = -ego_vel.dot(p.direction_vector);
