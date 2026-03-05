@@ -51,7 +51,7 @@ namespace radar
             bool success = false;
             Eigen::Vector3d linear_velocity = Eigen::Vector3d::Zero();
             Eigen::Matrix3d covariance = Eigen::Matrix3d::Identity();
-            int inlier_ratio;
+            int inlier_ratio = 0.15;
         };
 
 
@@ -82,7 +82,7 @@ namespace radar
     struct OptimizationFrame
     {
         // Time stamp of radar frame
-        double timestamp;
+        double timestamp = 0.0;
 
         // All IMU measurements
         std::vector<ImuData> imu_measurements;
@@ -91,8 +91,8 @@ namespace radar
         VelocityEstimate reve_velocity_body;
 
         // Delta yaw estimated from radar frame
-        double delta_yaw;
-        double delta_yaw_fitness;
+        double delta_yaw = 0.0;
+        double delta_yaw_fitness = 0.0;
 
         // Flags
         bool has_reve_velocity = false;

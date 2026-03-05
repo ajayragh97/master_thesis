@@ -149,9 +149,6 @@ int main() {
             double dt = (i > 0) ? (timestamps[i] - timestamps[i-1]) : 0.1;
             Eigen::Vector3d t_guess_sensor = ego_vel_sensor * dt;
 
-            // Guess Matrix (Sensor Frame, Backward T)
-            // Since we move FORWARD, the Target (Prev) is behind Source (Curr).
-            // T_guess_icp should be roughly Inverse(Forward Motion)
             Eigen::Matrix4d T_guess_icp = Eigen::Matrix4d::Identity();
             T_guess_icp.block<3,1>(0,3) = -t_guess_sensor; 
 

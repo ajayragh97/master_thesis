@@ -12,8 +12,7 @@ namespace radar
 
         RadarEgoEstimator::RadarEgoEstimator(const EstimatorConfig& config)   :   config_(config) 
         {
-            std::random_device rd;
-            rng_ = std::mt19937(rd());
+            rng_ = std::mt19937(42); // Fixed seed for reproducibility
         }
 
         // update the config with new config parameters

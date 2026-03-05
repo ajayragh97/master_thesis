@@ -1,0 +1,63 @@
+{
+    "dataset": {
+        "base_dir": "/home/ajay/work/temp/aspen_run7/",
+        "calib_dir": "calib",
+        "output_filename": "reve/factor_graph_trajectory_tum.txt",
+        "static_duration": 0.0,
+        "sensor": "single_chip"
+    },
+    "calibration": {
+        "tf_radar_path": "/home/ajay/work/temp/calib/transforms/base_to_single_chip.txt",
+        "tf_imu_path": "/home/ajay/work/temp/calib/transforms/base_to_imu.txt"
+    },
+    "reve": {
+        "ransac_iter": 100,
+        "min_dist": 0.5,
+        "max_dist": 10.0,
+        "min_db": 50.0,
+        "min_elv": -45.0,
+        "max_elv": 45.0,
+        "min_azim": -45.0,
+        "max_azim": 45.0,
+        "inlier_thresh": 0.2,
+        "max_inlier_ratio": 0.9,
+        "zero_vel_thresh": 0.05
+    },
+    "icp": {
+        "max_iterations": 100,
+        "max_correspondences_dist": 1.0, 
+        "intensity_threshold": 0.25,
+        "transformation_epsilon": 1e-6,
+        "euclidean_fitness_epsilon": 1e-6,
+        "dynamic_point_vel_thresh": 0.25,
+        "start_tx": -0.0465733426578,
+        "start_ty": -0.0340903515794,
+        "start_tz": -0.0261421280906,
+        "start_qx": -0.0246014325265,
+        "start_qy": -0.00101571297063,
+        "start_qz": -0.00310958606125,
+        "start_qw": 0.999691986724
+    },
+    "graph": {
+        "use_2d_mode": true,
+        "gravity": 9.81,
+        "keyframe_rate": 0.01,
+        "noise": {
+            "accel_sigma": 2.45e-4,
+            "gyro_sigma": 8.73e-5,
+            "accel_bias_rw_sigma": 1.0e-4,
+            "gyro_bias_rw_sigma": 4.0e-5
+        },
+        "sigma": {
+            "prior_position": 0.001,
+            "prior_orientation": 0.01,
+            "prior_vel": 0.1,
+            "prior_bias_accel": 1e-3,
+            "prior_bias_gyro": 1e-3
+        },
+        "isam2": {
+            "relinearize_threshold": 0.1,
+            "relinearize_skip": 10
+        }
+    }
+}

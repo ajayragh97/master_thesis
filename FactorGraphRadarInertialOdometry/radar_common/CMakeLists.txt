@@ -10,4 +10,4 @@ target_include_directories(radar_common PUBLIC
     $<INSTALL_INTERFACE:include>
 )
 
-target_link_libraries(radar_common PUBLIC Eigen3::Eigen)
+target_link_libraries(radar_common PUBLIC radar_registration Eigen3::Eigen nlohmann_json::nlohmann_json )

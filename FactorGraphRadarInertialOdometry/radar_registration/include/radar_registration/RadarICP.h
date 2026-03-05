@@ -16,6 +16,7 @@ namespace radar
             double intensity_threshold = 0.25; // normalized difference
             double transformation_epsilon = 1e-6; // icp convergence criteria
             double euclidean_fitness_epsilon = 1e-6;
+            double dynamic_point_vel_thresh = 0.5; // m/s - points with velocity above this are considered dynamic and ignored in ICP
             double start_tx = -0.0465733426578; // init global pose x
             double start_ty = -0.0340903515794; // y
             double start_tz = -0.0261421280906; // z
