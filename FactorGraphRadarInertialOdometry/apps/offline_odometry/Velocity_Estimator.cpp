@@ -86,7 +86,7 @@ PointCloud loadPointCloud(const std::string& filename)
         {
             RadarTarget t;
             size_t base = i * 5;
-            t.position_cart = Eigen::Vector3d(buffer[base + 0], buffer[base + 1], buffer[base + 2]);
+            t.position_cart = Eigen::Vector3d(buffer[base + 0], -buffer[base + 1], buffer[base + 2]);
             t.snr_db = static_cast<double>(buffer[base + 3]);
             t.doppler_velocity = static_cast<double>(buffer[base + 4]);
 
@@ -113,6 +113,7 @@ int main()
     // Calibration
     std::string calib_dir = "/home/ajay/work/temp/calib/";
     std::string tf_single_chip_path = calib_dir + "transforms/base_to_single_chip.txt";
+    std::string tf_cascade_path = calib_dir + "transforms/base_to_cascade.txt";
     std::string tf_imu_path = calib_dir + "transforms/base_to_imu.txt";
 
     // --- INITIALIZATION ---

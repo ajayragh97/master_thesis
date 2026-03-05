@@ -75,14 +75,14 @@ PointCloud filterDynamicPoints(const PointCloud& input, const Eigen::Vector3d& e
 int main() {
     // --- PATHS ---
     std::string base_dir = "/home/ajay/work/temp/aspen_run7/";
-    std::string data_dir = base_dir +  "single_chip/pointclouds/data/";
-    std::string stamp_path = base_dir + "single_chip/pointclouds/timestamps.txt";
+    std::string data_dir = base_dir +  "cascade/pointclouds/data/";
+    std::string stamp_path = base_dir + "cascade/pointclouds/timestamps.txt";
     // This output file will be in TUM format (compatible with GT)
-    std::string output_path = base_dir + "reve/single_chip_estimated_trajectory_tum.txt";
+    std::string output_path = base_dir + "reve/cascade_estimated_trajectory_tum.txt";
 
     // Calibration Paths
     std::string calib_dir = "/home/ajay/work/temp/calib/";
-    std::string tf_radar_path = calib_dir + "transforms/base_to_single_chip.txt";
+    std::string tf_radar_path = calib_dir + "transforms/base_to_cascade.txt";
     std::string tf_imu_path = calib_dir + "transforms/base_to_imu.txt"; 
     bool perform_2d_icp = true;
 

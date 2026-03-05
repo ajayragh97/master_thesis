@@ -50,6 +50,9 @@ namespace radar
                 gtsam::SharedNoiseModel planar_vel_noise_;
                 double current_timestamp_;
 
+                // Helper function to attempt optimization and handle indeterminant system exceptions by adding pseudo-priors
+                void attemptOptimization();
+
             public:
                 GraphOptimizer(const radar::common::GraphConfig& config); // constructor
                 ~GraphOptimizer() = default; // destructor

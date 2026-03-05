@@ -110,7 +110,7 @@ namespace radar
                         << frame.timestamp << " has NO IMU measurements. Skipping graph update." << std::endl;
                 return; 
             }
-            
+
             // update pose index
             uint64_t prev_idx = current_node_idx_;
             current_node_idx_++;
@@ -139,10 +139,10 @@ namespace radar
                 {
                     dt = curr_imu_frame.timestamp - frame.imu_measurements[i-1].timestamp;
                 }
-                if (dt <= 0.0) 
+                if (dt <= 1e-4) 
                 {
-                    dt = 1e-6; // Force a tiny positive delta
-                    std::cerr << "WARNING: Non-positive dt between IMU measurements. Forcing dt = " << dt << " seconds." << std::endl;
+                    dt = 1e-4; // Force a tiny positive delta
+                    std::cerr << "WARNING: Too small dt between IMU measurements. Forcing dt = " << dt << " seconds." << std::endl;
                 }
 
                 preintegrated_imu_->integrateMeasurement(curr_imu_frame.linear_acceleration, 
@@ -216,7 +216,7 @@ namespace radar
             new_values_.insert(B(curr_idx), current_bias_);
 
             // update ISAM2
-            isam2_.update(new_factors_, new_values_);
+            attemptOptimization();
             new_factors_.resize(0);
             new_values_.clear();
 
@@ -274,5 +274,77 @@ namespace radar
             outFile.close();
             std::cout << "Full trajectory saved successfully." << std::endl;
         }
+
+        void GraphOptimizer::attemptOptimization()
+        {
+            // Try to update normally
+            try
+            {
+                isam2_.update(new_factors_, new_values_);
+                // cleanup after successful optimization
+                new_factors_.resize(0);
+                new_values_.clear();
+            }
+            catch(const gtsam::IndeterminantLinearSystemException& e)
+            {
+                std::cerr << "[GraphOptimizer] Indeterminant System detected at Key " 
+                  << gtsam::DefaultKeyFormatter(e.nearbyVariable()) << ". Attempting Recovery..." << std::endl;
+                
+                new_values_.clear();
+                
+                // Recovery strategy: The graph is floating. we have to anchor the current variables
+                // Using the current estimates as "pseudo-priors" to anchor the graph and break the indeterminacy
+
+                uint64_t curr = current_node_idx_;
+                
+                // 1. Anchor Pose (Weakly pin XYZ, strongly pin RP if in 2D mode)
+                auto pose_noise = use_2d_mode_ ? planar_pose_noise_ : gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(6) <<  config_.prior_position_sigma, 
+                                                                                                                                config_.prior_position_sigma, 
+                                                                                                                                config_.prior_position_sigma, 
+                                                                                                                                config_.prior_orientation_sigma, 
+                                                                                                                                config_.prior_orientation_sigma, 
+                                                                                                                                config_.prior_orientation_sigma).finished());
+
+                new_factors_.add(gtsam::PriorFactor<gtsam::Pose3>(X(curr), current_pose_, pose_noise));
+
+                // 2. Anchor Velocity (If in 2D mode, only anchor Vz)
+                auto vel_noise = use_2d_mode_ ? planar_vel_noise_ : gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(3) <<   config_.prior_vel_sigma, 
+                                                                                                            config_.prior_vel_sigma, 
+                                                                                                            config_.prior_vel_sigma).finished());
+                new_factors_.add(gtsam::PriorFactor<gtsam::Vector3>(V(curr), current_velocity_, vel_noise));
+
+                // 3. Anchor Bias
+                auto bias_noise = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(6) <<  config_.prior_bias_accel_sigma,
+                                                                                            config_.prior_bias_accel_sigma,
+                                                                                            config_.prior_bias_accel_sigma,
+                                                                                            config_.prior_bias_gyro_sigma,
+                                                                                            config_.prior_bias_gyro_sigma,
+                                                                                            config_.prior_bias_gyro_sigma).finished());
+                new_factors_.add(gtsam::PriorFactor<gtsam::imuBias::ConstantBias>(B(curr), current_bias_, bias_noise));
+
+                // Retry optimization
+                try
+                {
+                    gtsam::Values empty_values; 
+                    isam2_.update(new_factors_, empty_values);
+                    std::cout << "[GraphOptimizer] Recovery successful. Graph optimized." << std::endl;
+                }
+                catch(const gtsam::IndeterminantLinearSystemException& e)
+                {
+                    std::cerr << "[GraphOptimizer] Recovery attempt failed at Key " 
+                              << gtsam::DefaultKeyFormatter(e.nearbyVariable()) 
+                              << ". Graph remains indeterminant. This frame will be skipped." << std::endl;
+                    new_factors_.resize(0); // Clear the pseudo-priors to avoid polluting future optimizations
+                    new_values_.clear();
+                    return; // Skip this frame's update
+                }
+            }
+
+            new_factors_.resize(0);
+            new_values_.clear();           
+            
+        }
+
+        
     }
 }

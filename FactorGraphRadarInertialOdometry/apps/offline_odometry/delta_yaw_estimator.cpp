@@ -165,7 +165,7 @@ int main() {
             Eigen::Matrix3d R_body = M_body.block<3,3>(0,0);
             double delta_yaw = std::atan2(R_body(1,0), R_body(0,0));
             outFile << timestamps[i] << " " << delta_yaw << "\n";
-            std::cout << "Frame " << i << " | Delta Yaw: " << delta_yaw * (180.0/M_PI) << " deg" << std::endl;
+            std::cout << "Frame " << i << " | Delta Yaw: " << delta_yaw * (180.0/M_PI) << " deg" << " fitness: " << icp_solver.getFitnessScore() << std::endl;
         }
 
         

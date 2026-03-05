@@ -184,8 +184,12 @@ int main(int argc, char** argv)
 
         double target_radar_time = timestamps[i];
 
+        // If the next virtual node would be closer than 2ms to the radar frame, STOP.
+        // We will just jump straight to the radar frame.
+        double time_buffer = 0.002; 
+
         // creating intermediate nodes at fixed rate between last node and current timestamp
-        while (last_node_timestamp + TARGET_DT < target_radar_time)
+        while (last_node_timestamp + TARGET_DT < target_radar_time - time_buffer)
         {
             double next_node_timestamp = last_node_timestamp + TARGET_DT;
 
