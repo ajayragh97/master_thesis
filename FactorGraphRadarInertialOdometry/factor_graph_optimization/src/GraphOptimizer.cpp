@@ -100,6 +100,17 @@ namespace radar
 
         void GraphOptimizer::addFrame(const radar::common::OptimizationFrame& frame)
         {
+
+            // ==============================================================
+            // SAFETY CHECK FIRST: Do not increment index if data is invalid
+            // ==============================================================
+            if (frame.imu_measurements.empty()) 
+            {
+                std::cerr << "CRITICAL: Frame at " << std::fixed << std::setprecision(6) 
+                        << frame.timestamp << " has NO IMU measurements. Skipping graph update." << std::endl;
+                return; 
+            }
+            
             // update pose index
             uint64_t prev_idx = current_node_idx_;
             current_node_idx_++;

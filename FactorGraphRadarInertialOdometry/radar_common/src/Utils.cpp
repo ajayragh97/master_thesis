@@ -52,7 +52,7 @@ namespace radar
             return timestamps;
         }
 
-        PointCloud filterDynamicPoints(const PointCloud& input, const Eigen::Vector3d& ego_vel, double threshold = 0.5) 
+        PointCloud filterDynamicPoints(const PointCloud& input, const Eigen::Vector3d& ego_vel, double threshold) 
         {
             PointCloud static_cloud; static_cloud.reserve(input.size());
             for(const auto& p : input) {

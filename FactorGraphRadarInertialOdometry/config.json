@@ -41,7 +41,7 @@
     "graph": {
         "use_2d_mode": true,
         "gravity": 9.81,
-        "keyframe_rate": 0.01,
+        "keyframe_rate": 100,
         "noise": {
             "accel_sigma": 2.45e-4,
             "gyro_sigma": 8.73e-5,

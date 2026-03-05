@@ -75,7 +75,7 @@ target_include_directories(run_yaw_estimator PRIVATE
 # Factor Graph Optimization
 add_executable(run_factor_graph_radar_only_keyframe offline_odometry/FactorGraph_Odometry_radar_only_keyframe.cpp)
 
-target_link_libraries(run_factor_graph 
+target_link_libraries(run_factor_graph_radar_only_keyframe 
     PRIVATE 
     factor_graph_optimization    
     radar_registration   
@@ -87,6 +87,27 @@ target_link_libraries(run_factor_graph
 )
 
 target_include_directories(run_factor_graph_radar_only_keyframe PRIVATE 
+    ${CMAKE_SOURCE_DIR}/radar_common/include
+    ${CMAKE_SOURCE_DIR}/radar_velocity_estimation/include
+    ${CMAKE_SOURCE_DIR}/radar_registration/include
+    ${CMAKE_SOURCE_DIR}/factor_graph_optimization/include
+    ${CMAKE_SOURCE_DIR}/3rdparty/nanoflann/include
+)
+
+add_executable(run_fixed_rate_odometry offline_odometry/FactorGraph_FixedRate_Odometry.cpp)
+
+target_link_libraries(run_fixed_rate_odometry 
+    PRIVATE 
+    factor_graph_optimization    
+    radar_registration   
+    radar_velocity_estimation  
+    radar_common  
+    gtsam                        
+    Eigen3::Eigen    
+    stdc++fs        
+)
+
+target_include_directories(run_fixed_rate_odometry PRIVATE 
     ${CMAKE_SOURCE_DIR}/radar_common/include
     ${CMAKE_SOURCE_DIR}/radar_velocity_estimation/include
     ${CMAKE_SOURCE_DIR}/radar_registration/include

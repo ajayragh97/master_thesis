@@ -22,7 +22,7 @@ using namespace radar::optimization;
 
 int main(int argc, char** argv)
 {
-    std::string config_path = "config.json"; // Default config path
+    std::string config_path = "../config.json"; // Default config path
     if (argc > 1) config_path = argv[1]; // Allow custom config path as command-line argument
 
     radar::common::SystemConfig cfg;
@@ -49,6 +49,32 @@ int main(int argc, char** argv)
     // Load data
     std::vector<double> timestamps = loadTimestamps(stamp_path);
     std::vector<ImuData> all_imu_data = loadImuDataVector(imu_data_path, imu_stamp_path);
+
+    double TARGET_DT = 1.0 / cfg.graph.keyframe_rate; // Desired time interval between graph nodes 
+
+    // Sanity check for timestamps to ensure their units
+    if (timestamps.size() > 1) {
+        double avg_dt = (timestamps.back() - timestamps.front()) / (timestamps.size() - 1);
+        
+        std::cout << "Detected Average Radar dt: " << avg_dt << std::endl;
+
+        if (avg_dt > 1000.0) {
+            std::cerr << "CRITICAL ERROR: Timestamps appear to be in MICROSECONDS or NANOSECONDS." << std::endl;
+            std::cerr << "Please convert them to SECONDS before running this optimization." << std::endl;
+            return -1;
+        }
+        
+        if (avg_dt > 10.0) {
+             std::cerr << "WARNING: Frame rate is very low (< 0.1 Hz). Check your data." << std::endl;
+        }
+
+        // Check if TARGET_DT is reasonable
+        if (TARGET_DT >= avg_dt) {
+             std::cerr << "WARNING: Your Fixed-Rate DT (" << TARGET_DT 
+                       << "s) is larger than the Sensor DT (" << avg_dt 
+                       << "s). This defeats the purpose of fixed-rate optimization!" << std::endl;
+        }
+    }
 
     if (timestamps.empty() || all_imu_data.empty())
     {
@@ -116,13 +142,149 @@ int main(int argc, char** argv)
     }
 
     PointCloud prev_cloud;
-    std::cout << "Starting Fixed-Rate Optimization (Target: " << (1.0/cfg.graph.keyframe_rate) << "Hz)..." << std::endl;
+    std::cout << "Starting Fixed-Rate Optimization (Target: " << (cfg.graph.keyframe_rate) << "Hz)..." << std::endl;
+
+    // Keeping track of last known IMU reading for gap filling
+    ImuData last_known_imu;
+    if (!all_imu_data.empty()) last_known_imu = all_imu_data[current_imu_idx];
 
     // Main Loop
     for (size_t i = start_idx; i < timestamps.size(); ++i)
     {
         // 1. Process radar data
+        std::string bin_path = data_dir + "radar_pointcloud_" + std::to_string(i) + ".bin";
+        if (!fs::exists(bin_path)) continue;
+        PointCloud raw_cloud = loadPointCloud(bin_path);
+        if (raw_cloud.size() < 10) continue; // Skip if not enough points
+
+        // 2. Estimate velocity
+        VelocityEstimate vel_estimate_sensor = vel_estimator.estimate(raw_cloud, false);
+
+        // 3. Filter dynamic points if velocity estimate is valid
+        PointCloud static_cloud;
+        if (vel_estimate_sensor.success)
+        {
+            static_cloud = filterDynamicPoints(raw_cloud, vel_estimate_sensor.linear_velocity, cfg.icp.dynamic_point_vel_thresh);
+        } 
+        else 
+        {
+            static_cloud = raw_cloud; // If velocity estimate failed, use raw cloud for ICP (less accurate)
+        }
+
+        // If this is the first frame, initialize prev_cloud and skip optimization (no ICP or graph factors to add yet)
+        if (i == start_idx)
+        {
+            prev_cloud = static_cloud;
+            continue;
+        }
+
+        // ==========================================
+        // Fixed-Rate Graph Node Creation
+        // ==========================================
+
+        double target_radar_time = timestamps[i];
+
+        // creating intermediate nodes at fixed rate between last node and current timestamp
+        while (last_node_timestamp + TARGET_DT < target_radar_time)
+        {
+            double next_node_timestamp = last_node_timestamp + TARGET_DT;
+
+            OptimizationFrame virtual_frame;
+            virtual_frame.timestamp = next_node_timestamp;
+            virtual_frame.has_reve_velocity = false; // No velocity measurement for virtual frame
+            virtual_frame.has_delta_yaw = false; // No ICP measurement for virtual frame
+
+            // Get IMU slice for this virtual frame
+            while (current_imu_idx < all_imu_data.size() && all_imu_data[current_imu_idx].timestamp <= next_node_timestamp)
+            {
+                if (all_imu_data[current_imu_idx].timestamp > last_node_timestamp) // Only add IMU data that is after the last node timestamp
+                {
+                    virtual_frame.imu_measurements.push_back(all_imu_data[current_imu_idx]);
+
+                    // Update our memory of "current" motion
+                    last_known_imu = all_imu_data[current_imu_idx];
+                }
+                current_imu_idx++;
+            }
+
+
+            // Add virtual Node
+            if (!virtual_frame.imu_measurements.empty()) // Only add node if we have IMU data to integrate
+            {
+                optimizer.addFrame(virtual_frame);
+            }
+            last_node_timestamp = next_node_timestamp;
+        }
+
+        // ==========================================
+        // Adding Radar Node at current timestamp
+        // ==========================================
+        OptimizationFrame radar_frame;
+        radar_frame.timestamp = target_radar_time;
+
+        // Fill remaining IMU data for the current radar frame
+        while (current_imu_idx < all_imu_data.size() && all_imu_data[current_imu_idx].timestamp <= target_radar_time)
+        {
+            if (all_imu_data[current_imu_idx].timestamp > last_node_timestamp) // Only add IMU data that is after the last node timestamp (to avoid duplicates)
+            {
+                radar_frame.imu_measurements.push_back(all_imu_data[current_imu_idx]);
+
+                // Update our memory of "current" motion
+                last_known_imu = all_imu_data[current_imu_idx];
+            }
+            current_imu_idx++;
+        }
+
+        // --- Handling data gaps for radar frame ---
+        if (radar_frame.imu_measurements.empty()) {
+             ImuData synthetic_imu = last_known_imu;
+             synthetic_imu.timestamp = target_radar_time;
+             radar_frame.imu_measurements.push_back(synthetic_imu);
+        }
+
+        // Populate REVE velocity if available
+        if (vel_estimate_sensor.success)
+        {
+            Eigen::Vector3d vel_estimate_body = corrector.correctVelocity(vel_estimate_sensor.linear_velocity, target_radar_time);
+            radar_frame.reve_velocity_body.linear_velocity = vel_estimate_body;
+            radar_frame.reve_velocity_body.inlier_ratio = vel_estimate_sensor.inlier_ratio;
+            radar_frame.reve_velocity_body.covariance = vel_estimate_sensor.covariance;
+            radar_frame.has_reve_velocity = true;
+        }
+
+        // Estimate delta yaw using ICP between prev_cloud and current static_cloud
+        double dt_radar = timestamps[i] - timestamps[i-1];
+        Eigen::Vector3d T_guess_sensor = -vel_estimate_sensor.linear_velocity * dt_radar; // Negative velocity for ICP translation guess (Moving current cloud backwards to match prev cloud)
+        Eigen::Matrix4d T_guess_icp = Eigen::Matrix4d::Identity();
+        T_guess_icp.block<3,1>(0,3) = T_guess_sensor;
+
+        Eigen::Matrix4d T_icp_sensor  = icp_solver.compute(static_cloud, prev_cloud, T_guess_icp, cfg.graph.use_2d_mode);
+        Eigen::Matrix4d M_body = T_base_radar * T_icp_sensor * T_radar_base; // Convert to Body Frame
+
+        radar_frame.delta_yaw = atan2(M_body(1,0), M_body(0,0));
+        radar_frame.delta_yaw_fitness = icp_solver.getFitnessScore();
+        radar_frame.has_delta_yaw = true;
+
+        // Add radar frame as a node in the graph
+        optimizer.addFrame(radar_frame);
+
+        // Update the node trackers
+        last_node_timestamp = target_radar_time;
+        prev_cloud = static_cloud;
+
+        // Progress output
+        if (i % 100 == 0)
+        {
+            std::cout << "Processed frame " << i << "/" << timestamps.size() 
+                      << " (Time: " << std::fixed << std::setprecision(2) << target_radar_time 
+                      << "s, REVE Inlier Ratio: " << radar_frame.reve_velocity_body.inlier_ratio 
+                      << "%, ICP Fitness: " << radar_frame.delta_yaw_fitness << ")" << std::endl;
+        }
+        
     }
 
+    // Save final trajectory
+    optimizer.saveFullTrajectory(output_path);
+    return 0;
 }
 

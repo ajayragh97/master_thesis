@@ -51,7 +51,7 @@ namespace radar
             bool success = false;
             Eigen::Vector3d linear_velocity = Eigen::Vector3d::Zero();
             Eigen::Matrix3d covariance = Eigen::Matrix3d::Identity();
-            int inlier_ratio = 0.15;
+            int inlier_ratio = 0.0;
         };
 
 
