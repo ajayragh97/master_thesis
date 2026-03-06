@@ -2,7 +2,7 @@
     "dataset": {
         "base_dir": "/home/ajay/work/temp/aspen_run7/",
         "calib_dir": "calib",
-        "output_filename": "reve/factor_graph_trajectory_tum.txt",
+        "output_filename": "reve/aspen_run7_single_chip_odometry",
         "static_duration": 0.0,
         "sensor": "single_chip"
     },
@@ -21,7 +21,8 @@
         "max_azim": 45.0,
         "inlier_thresh": 0.2,
         "max_inlier_ratio": 0.9,
-        "zero_vel_thresh": 0.05
+        "zero_vel_thresh": 0.05,
+        "covariance_noise_floor": 0.05
     },
     "icp": {
         "max_iterations": 100,
@@ -33,7 +34,7 @@
         "start_tx": -0.0465733426578,
         "start_ty": -0.0340903515794,
         "start_tz": -0.0261421280906,
-        "start_qx": -0.0246014325265,
+        "start_qx": -0.0246014325265 ,
         "start_qy": -0.00101571297063,
         "start_qz": -0.00310958606125,
         "start_qw": 0.999691986724

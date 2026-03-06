@@ -97,6 +97,7 @@ namespace radar
                 cfg.reve.inlier_thresh = config_json["reve"]["inlier_thresh"];
                 cfg.reve.max_inlier_ratio = config_json["reve"]["max_inlier_ratio"];
                 cfg.reve.zero_vel_thresh = config_json["reve"]["zero_vel_thresh"];
+                cfg.reve.covariance_noise_floor = config_json["reve"]["covariance_noise_floor"];
 
                 // ICP config
                 cfg.icp.max_iterations = config_json["icp"]["max_iterations"];

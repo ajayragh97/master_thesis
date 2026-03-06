@@ -39,8 +39,8 @@ namespace radar
             Tight constraint 
             Loose constraint
             */  
-            double tight = 1e-5;
-            double loose = 1.0e9;
+            double tight = 1e-4;
+            double loose = 100.0;
             // Constrain Roll, Pitch, Z. Let Yaw, X, Y float.
             planar_pose_noise_ = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(6) << tight, tight, loose, loose, loose, tight).finished());
             // Constrain Velocity Z. Let Vx, Vy float.
@@ -141,8 +141,9 @@ namespace radar
                 }
                 if (dt <= 1e-4) 
                 {
-                    dt = 1e-4; // Force a tiny positive delta
-                    std::cerr << "WARNING: Too small dt between IMU measurements. Forcing dt = " << dt << " seconds." << std::endl;
+                    // dt = 1e-4; // Force a tiny positive delta
+                    std::cerr << "WARNING: Too small dt between IMU measurements. SKIPPING FRAME.." << std::endl;
+                    continue;
                 }
 
                 preintegrated_imu_->integrateMeasurement(curr_imu_frame.linear_acceleration, 

@@ -44,7 +44,8 @@ int main(int argc, char** argv)
     std::string stamp_path = base_dir + cfg.dataset.sensor + "/pointclouds/timestamps.txt";
     std::string imu_data_path = base_dir + "imu/imu_data.txt";
     std::string imu_stamp_path = base_dir + "imu/timestamps.txt";
-    std::string output_path = base_dir + cfg.dataset.output_filename;
+    std::string full_optimized_output_path = base_dir + cfg.dataset.output_filename + "_full_optimized.txt";
+    std::string real_time_optimized_output_path = base_dir + cfg.dataset.output_filename + "_real_time_optimized.txt";
 
     // Load data
     std::vector<double> timestamps = loadTimestamps(stamp_path);
@@ -123,6 +124,15 @@ int main(int argc, char** argv)
 
     
     // initialize graph
+
+
+    std::ofstream outFile(real_time_optimized_output_path);
+    if (!outFile.is_open()) {
+        std::cerr << "Error: Could not open file for writing: " << real_time_optimized_output_path << std::endl;
+        return 0;
+    }
+    outFile << std::fixed << std::setprecision(6);
+
     gtsam::Pose3 init_pose(gtsam::Rot3::Quaternion(cfg.icp.start_qw, cfg.icp.start_qx, cfg.icp.start_qy, cfg.icp.start_qz),
                            gtsam::Point3(cfg.icp.start_tx, cfg.icp.start_ty, cfg.icp.start_tz));
     
@@ -130,6 +140,15 @@ int main(int argc, char** argv)
     gtsam::imuBias::ConstantBias init_bias;
 
     optimizer.initialize(init_pose, init_velocity, init_bias, timestamps[start_idx]);
+
+    outFile << timestamps[start_idx] << " "
+            << init_pose.translation().x() << " "
+            << init_pose.translation().y() << " "
+            << init_pose.translation().z() << " "
+            << cfg.icp.start_qx << " " 
+            << cfg.icp.start_qy << " " 
+            << cfg.icp.start_qz << " " 
+            << cfg.icp.start_qw << "\n";
 
     // State tracking
     double last_node_timestamp = timestamps[start_idx];
@@ -147,6 +166,8 @@ int main(int argc, char** argv)
     // Keeping track of last known IMU reading for gap filling
     ImuData last_known_imu;
     if (!all_imu_data.empty()) last_known_imu = all_imu_data[current_imu_idx];
+
+    double last_valid_radar_time = timestamps[start_idx];
 
     // Main Loop
     for (size_t i = start_idx; i < timestamps.size(); ++i)
@@ -257,8 +278,8 @@ int main(int argc, char** argv)
         }
 
         // Estimate delta yaw using ICP between prev_cloud and current static_cloud
-        double dt_radar = timestamps[i] - timestamps[i-1];
-        Eigen::Vector3d T_guess_sensor = -vel_estimate_sensor.linear_velocity * dt_radar; // Negative velocity for ICP translation guess (Moving current cloud backwards to match prev cloud)
+        double dt_radar = timestamps[i] - last_valid_radar_time;
+        Eigen::Vector3d T_guess_sensor = -vel_estimate_sensor.linear_velocity * dt_radar; // Predict translation in sensor frame using REVE velocity and time gap (assuming constant velocity model) - this is our initial guess for ICP. Even if REVE fails, this will just be zero, so ICP will still run but with a worse initial guess.
         Eigen::Matrix4d T_guess_icp = Eigen::Matrix4d::Identity();
         T_guess_icp.block<3,1>(0,3) = T_guess_sensor;
 
@@ -269,12 +290,42 @@ int main(int argc, char** argv)
         radar_frame.delta_yaw_fitness = icp_solver.getFitnessScore();
         radar_frame.has_delta_yaw = true;
 
+        // ===============================
+        // Debug output for current frame
+        // ===============================
+        if (i % 20 == 0) 
+        { 
+            std::cout << "--- Frame " << i << " ---" << std::endl;
+            std::cout << "1. REVE Vel X (Body): " << radar_frame.reve_velocity_body.linear_velocity.x() << " m/s" << std::endl;
+            
+            if (!radar_frame.imu_measurements.empty()) 
+            {
+                std::cout << "2. IMU Accel X:       " << radar_frame.imu_measurements.back().linear_acceleration.x() << " m/s^2" << std::endl;
+                std::cout << "3. IMU Gyro Z (Yaw):  " << radar_frame.imu_measurements.back().angular_velocity.z() * dt_radar << " rad" << std::endl;
+            }
+            std::cout << "4. ICP Delta Yaw:     " << radar_frame.delta_yaw << " rad" << std::endl;
+            std::cout << "-----------------------" << std::endl;
+        }
+// ===========================================================
+
         // Add radar frame as a node in the graph
         optimizer.addFrame(radar_frame);
 
         // Update the node trackers
         last_node_timestamp = target_radar_time;
         prev_cloud = static_cloud;
+        last_valid_radar_time = timestamps[i];
+
+        // Write optimized pose to file
+        gtsam::Pose3 optimized_pose = optimizer.getCurrentPose();
+        outFile << last_node_timestamp << " "
+                << optimized_pose.translation().x() << " "
+                << optimized_pose.translation().y() << " "
+                << optimized_pose.translation().z() << " "
+                << optimized_pose.rotation().toQuaternion().x() << " "
+                << optimized_pose.rotation().toQuaternion().y() << " "
+                << optimized_pose.rotation().toQuaternion().z() << " "
+                << optimized_pose.rotation().toQuaternion().w() << "\n";    
 
         // Progress output
         if (i % 100 == 0)
@@ -287,8 +338,13 @@ int main(int argc, char** argv)
         
     }
 
+    outFile.close();
+
+    std::cout << "Fixed-Rate Optimization complete. " << std::endl;
+    std::cout << "Real-time optimized trajectory saved to: " << real_time_optimized_output_path << std::endl;
+
     // Save final trajectory
-    optimizer.saveFullTrajectory(output_path);
+    optimizer.saveFullTrajectory(full_optimized_output_path);
     return 0;
 }
 

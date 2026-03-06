@@ -41,6 +41,7 @@ namespace radar
             double inlier_thresh = 0.2;
             double max_inlier_ratio = 0.9;
             double zero_vel_thresh = 0.05;
+            double covariance_noise_floor = 0.05;   // Minimum covariance to prevent overconfidence
         };
 
         /*

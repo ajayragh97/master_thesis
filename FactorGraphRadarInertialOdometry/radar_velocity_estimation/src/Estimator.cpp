@@ -12,7 +12,7 @@ namespace radar
 
         RadarEgoEstimator::RadarEgoEstimator(const EstimatorConfig& config)   :   config_(config) 
         {
-            rng_ = std::mt19937(42); // Fixed seed for reproducibility
+            rng_ = std::mt19937(1000); // Fixed seed for reproducibility
         }
 
         // update the config with new config parameters
@@ -107,7 +107,8 @@ namespace radar
                 H(i, 1) = -target.direction_vector[1];
                 H(i, 2) = -target.direction_vector[2];
 
-                y(i) = target.doppler_velocity;
+                // testing negative doppler to check TI radar sign conventions for doppler reading
+                y(i) = target.doppler_velocity; 
             }
 
             // solve the system of equations Hx = y to get x
@@ -118,6 +119,8 @@ namespace radar
             Eigen::VectorXd residuals = y - H * res.linear_velocity;
             double mse = residuals.squaredNorm() / std::max(1, (n - 3));
             res.covariance = (H.transpose() * H).inverse() * mse;
+            // Adding a noise floor to covariance to prevent overconfidence in very low noise scenarios
+            res.covariance += Eigen::Matrix3d::Identity() * config_.covariance_noise_floor;
             res.inlier_ratio = ((n * 1.0) / scan.size()) * 100;
             // std::cout << "inlier count: " << n << std::endl;
             // std::cout << "scan count: " << scan.size() << std::endl;
