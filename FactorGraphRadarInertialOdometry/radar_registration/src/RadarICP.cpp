@@ -247,7 +247,7 @@ namespace radar
                 }
                 else
                 {
-                    delta_T = solveWeightedSVD2D(matched_src, matched_tgt, matched_weights);
+                    delta_T = solveWeightedSVD(matched_src, matched_tgt, matched_weights);
                 }
 
                 // Update global transformation T

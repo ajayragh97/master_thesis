@@ -297,8 +297,7 @@ namespace radar
             isam2_.update(new_factors_, new_values_);
             // cleanup after successful optimization
             new_factors_.resize(0);
-            new_values_.clear();       
-            
+            new_values_.clear();                  
         }
 
         

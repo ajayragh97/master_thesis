@@ -1,6 +1,6 @@
 {
     "dataset": {
-        "base_dir": "/media/ajay/Backup_Plus1/datasets/coloradar/kitti/2_23_2021_edgar_army_run1/",
+        "base_dir": "/home/ajay/work/temp/aspen_run7/",
         "calib_dir": "calib",
         "output_filename": "reve/single_chip_odometry",
         "static_duration": 5.0,
