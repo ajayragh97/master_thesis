@@ -106,6 +106,7 @@ namespace radar
                 H(i, 0) = -target.direction_vector[0];
                 H(i, 1) = -target.direction_vector[1];
                 H(i, 2) = -target.direction_vector[2];
+                
 
                 // testing negative doppler to check TI radar sign conventions for doppler reading
                 y(i) = target.doppler_velocity; 

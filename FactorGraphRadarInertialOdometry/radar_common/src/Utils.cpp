@@ -35,7 +35,7 @@ namespace radar
                 cloud.reserve(num_points);
                 for (size_t i = 0; i < num_points; ++i) {
                     RadarTarget t; size_t base = i * 5;
-                    t.position_cart = Eigen::Vector3d(buffer[base + 0], -buffer[base + 1], buffer[base + 2]);
+                    t.position_cart = Eigen::Vector3d(buffer[base + 0], buffer[base + 1], buffer[base + 2]);
                     t.snr_db = static_cast<double>(buffer[base + 3]);
                     t.doppler_velocity = static_cast<double>(buffer[base + 4]);
                     computePolarAndDirection(t); cloud.push_back(t);
@@ -77,8 +77,8 @@ namespace radar
                 
                 ImuData data;
                 data.timestamp = t;
-                data.linear_acceleration = Eigen::Vector3d(ax, ay, az);
-                data.angular_velocity = Eigen::Vector3d(gx, gy, gz);
+                data.linear_acceleration = -Eigen::Vector3d(ax, ay, az);
+                data.angular_velocity = -Eigen::Vector3d(gx, gy, gz);
                 imu_vec.push_back(data);
             }
             return imu_vec;

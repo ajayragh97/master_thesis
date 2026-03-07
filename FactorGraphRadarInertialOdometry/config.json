@@ -2,12 +2,12 @@
     "dataset": {
         "base_dir": "/home/ajay/work/temp/aspen_run7/",
         "calib_dir": "calib",
-        "output_filename": "reve/aspen_run7_single_chip_odometry",
-        "static_duration": 0.0,
-        "sensor": "single_chip"
+        "output_filename": "reve/cascade_odometry",
+        "static_duration": 5.0,
+        "sensor": "cascade"
     },
     "calibration": {
-        "tf_radar_path": "/home/ajay/work/temp/calib/transforms/base_to_single_chip.txt",
+        "tf_radar_path": "/home/ajay/work/temp/calib/transforms/base_to_cascade.txt",
         "tf_imu_path": "/home/ajay/work/temp/calib/transforms/base_to_imu.txt"
     },
     "reve": {
@@ -30,24 +30,24 @@
         "intensity_threshold": 0.25,
         "transformation_epsilon": 1e-6,
         "euclidean_fitness_epsilon": 1e-6,
-        "dynamic_point_vel_thresh": 0.25,
-        "start_tx": -0.0465733426578,
-        "start_ty": -0.0340903515794,
-        "start_tz": -0.0261421280906,
-        "start_qx": -0.0246014325265 ,
-        "start_qy": -0.00101571297063,
-        "start_qz": -0.00310958606125,
-        "start_qw": 0.999691986724
+        "dynamic_point_vel_thresh": 0.5,
+        "start_tx": 0.0,
+        "start_ty": 0.0,
+        "start_tz": 0.0,
+        "start_qx": 0.0 ,
+        "start_qy": 0.0,
+        "start_qz": 0.0,
+        "start_qw": 1.0
     },
     "graph": {
-        "use_2d_mode": true,
+        "use_2d_mode": false,
         "gravity": 9.81,
         "keyframe_rate": 50.0,
         "noise": {
-            "accel_sigma": 2.45e-4,
-            "gyro_sigma": 8.73e-5,
-            "accel_bias_rw_sigma": 1.0e-4,
-            "gyro_bias_rw_sigma": 4.0e-5
+            "accel_sigma": 1.0e-2,
+            "gyro_sigma": 1.0e-2,
+            "accel_bias_rw_sigma": 1.0e-2,
+            "gyro_bias_rw_sigma": 1.0e-3
         },
         "sigma": {
             "prior_position": 0.001,

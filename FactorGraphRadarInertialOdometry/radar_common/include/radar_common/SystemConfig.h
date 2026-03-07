@@ -38,6 +38,9 @@ namespace radar
 
             // Extrinsci Transforms (Base ->IMU)
             Transform T_base_imu;
+
+            // ZUPT constraint (Zero velocity)
+            double zero_vel_thresh = 0.05;
         };
 
         struct DatasetConfig
@@ -129,6 +132,7 @@ namespace radar
                 cfg.graph.isam2_relinearize_threshold = config_json["graph"]["isam2"]["relinearize_threshold"];
                 cfg.graph.isam2_relinearize_skip = config_json["graph"]["isam2"]["relinearize_skip"];
                 cfg.graph.keyframe_rate = config_json["graph"]["keyframe_rate"];
+                cfg.graph.zero_vel_thresh = config_json["reve"]["zero_vel_thresh"];
 
                 return cfg;
             }
