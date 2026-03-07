@@ -1,13 +1,13 @@
 {
     "dataset": {
-        "base_dir": "/home/ajay/work/temp/aspen_run7/",
+        "base_dir": "/media/ajay/Backup_Plus1/datasets/coloradar/kitti/2_23_2021_edgar_army_run1/",
         "calib_dir": "calib",
-        "output_filename": "reve/cascade_odometry",
+        "output_filename": "reve/single_chip_odometry",
         "static_duration": 5.0,
-        "sensor": "cascade"
+        "sensor": "single_chip"
     },
     "calibration": {
-        "tf_radar_path": "/home/ajay/work/temp/calib/transforms/base_to_cascade.txt",
+        "tf_radar_path": "/home/ajay/work/temp/calib/transforms/base_to_single_chip.txt",
         "tf_imu_path": "/home/ajay/work/temp/calib/transforms/base_to_imu.txt"
     },
     "reve": {
@@ -36,8 +36,8 @@
         "start_tz": 0.0,
         "start_qx": 0.0 ,
         "start_qy": 0.0,
-        "start_qz": 0.0,
-        "start_qw": 1.0
+        "start_qz": 1.0,
+        "start_qw": 0.0
     },
     "graph": {
         "use_2d_mode": false,

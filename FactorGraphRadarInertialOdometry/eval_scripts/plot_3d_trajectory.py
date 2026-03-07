@@ -4,8 +4,8 @@ from mpl_toolkits.mplot3d import Axes3D
 import os
 
 # Update this path
-ESTIMATED_TRAJ_FILE = '/home/ajay/work/temp/aspen_run7/reve/cascade_odometry_full_optimized.txt'
-GT_POSES_FILE       = '/home/ajay/work/temp/aspen_run7/groundtruth/groundtruth_poses.txt'
+ESTIMATED_TRAJ_FILE = '/media/ajay/Backup_Plus1/datasets/coloradar/kitti/2_23_2021_edgar_army_run1/reve/single_chip_odometry_full_optimized.txt'
+GT_POSES_FILE       = '/media/ajay/Backup_Plus1/datasets/coloradar/kitti/2_23_2021_edgar_army_run1/groundtruth/groundtruth_poses.txt'
 
 def main():
     est_data = np.loadtxt(ESTIMATED_TRAJ_FILE)

@@ -114,16 +114,12 @@ int main(int argc, char** argv)
     
     // initialize graph
     std::ofstream outFile(real_time_optimized_output_path);
-    if (!outFile.is_open()) {
+    if (!outFile.is_open()) 
+    {
         std::cerr << "Error: Could not open file for writing: " << real_time_optimized_output_path << std::endl;
         return 0;
     }
     outFile << std::fixed << std::setprecision(6);
-
-    gtsam::Pose3 init_pose(gtsam::Rot3::Quaternion(cfg.icp.start_qw, cfg.icp.start_qx, cfg.icp.start_qy, cfg.icp.start_qz),
-                           gtsam::Point3(cfg.icp.start_tx, cfg.icp.start_ty, cfg.icp.start_tz));
-
-    gtsam::Vector3 init_velocity = gtsam::Vector3::Zero();
 
     //--- Static Bias Calibration (at startup) ---
     std::cout << "Calibrating IMU Biases from static period" << std::endl;
@@ -143,31 +139,38 @@ int main(int argc, char** argv)
     }   
 
     // Compute mean bias
-    Eigen::Vector3d acc_bias = Eigen::Vector3d::Zero();
-    Eigen::Vector3d gyro_bias = Eigen::Vector3d::Zero();
+    Eigen::Vector3d mean_acc = Eigen::Vector3d::Zero();
+    Eigen::Vector3d mean_gyro = Eigen::Vector3d::Zero();
     if (!acc_buffer.empty() && !gyro_buffer.empty())
     {
         for (const auto& acc : acc_buffer) 
         {
-            acc_bias += acc;
+            mean_acc += acc;
         }
 
         for (const auto& gyro : gyro_buffer)
         {
-            gyro_bias += gyro;
+            mean_gyro += gyro;
         }
 
-        acc_bias /= acc_buffer.size();
-        gyro_bias /= gyro_buffer.size();
+        mean_acc /= acc_buffer.size();
+        mean_gyro /= gyro_buffer.size();
     }
+
+    double init_roll = atan2(mean_acc.y(), mean_acc.z());
+    double init_pitch = atan2(-mean_acc.x(), sqrt(pow(mean_acc.y(), 2) + pow(mean_acc.z(), 2)));
+    gtsam::Rot3 config_rot = gtsam::Rot3::Quaternion(cfg.icp.start_qw, cfg.icp.start_qx, cfg.icp.start_qy, cfg.icp.start_qz);
+    double init_yaw = config_rot.yaw();
     
-    std::cout << "Estimated Accel Bias: " << acc_bias.transpose() << std::endl;
-    std::cout << "Estimated Gyro Bias: " << gyro_bias.transpose() << std::endl;
+    // creating gravity aligned initial pose
+    gtsam::Rot3 aligned_rot = gtsam::Rot3::Ypr(init_yaw, init_pitch, init_roll);
+    gtsam::Pose3 init_pose(aligned_rot, gtsam::Point3(cfg.icp.start_tx, cfg.icp.start_ty, cfg.icp.start_tz));
 
-    // Updating preintegrator with initial bias
-    gtsam::Vector3 gravity_sensor_frame = init_pose.rotation().inverse() * gtsam::Vector3(0, 0, cfg.graph.gravity);
-    gtsam::imuBias::ConstantBias init_bias(acc_bias - gravity_sensor_frame, gyro_bias);
+    gtsam::Vector3 gravity_global(0, 0, cfg.graph.gravity);
+    gtsam::Vector3 gravity_sensor = aligned_rot.inverse() * gravity_global;
+    gtsam::imuBias::ConstantBias init_bias(mean_acc - gravity_sensor, mean_gyro);
 
+    gtsam::Vector3 init_velocity = gtsam::Vector3::Zero();
 
     optimizer.initialize(init_pose, init_velocity, init_bias, timestamps[start_idx]);
 
