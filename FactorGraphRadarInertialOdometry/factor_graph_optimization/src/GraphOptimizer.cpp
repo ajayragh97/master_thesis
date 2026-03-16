@@ -139,12 +139,12 @@ namespace radar
                 {
                     dt = curr_imu_frame.timestamp - frame.imu_measurements[i-1].timestamp;
                 }
-                if (dt <= 1e-4) 
-                {
-                    // dt = 1e-4; // Force a tiny positive delta
-                    std::cerr << "WARNING: Too small dt between IMU measurements. SKIPPING FRAME.." << std::endl;
-                    continue;
-                }
+                // if (dt <= 1e-4) 
+                // {
+                //     // dt = 1e-4; // Force a tiny positive delta
+                //     std::cerr << "WARNING: Too small dt between IMU measurements. SKIPPING FRAME.." << std::endl;
+                //     continue;
+                // }
 
                 preintegrated_imu_->integrateMeasurement(curr_imu_frame.linear_acceleration, 
                                                         curr_imu_frame.angular_velocity,
@@ -204,6 +204,18 @@ namespace radar
                 double yaw_sigma = std::max(frame.delta_yaw_fitness, 1e-4); 
                 auto delta_yaw_noise_model = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(1) << yaw_sigma).finished());
                 new_factors_.add(DeltaYawFactor(X(last_radar_pose_key_), X(curr_idx), frame.delta_yaw, delta_yaw_noise_model));
+
+                // Adding ICP pose estimate as between factor
+                gtsam::Rot3 icp_rot = gtsam::Rot3(frame.T_body.topLeftCorner(3, 3));
+                gtsam::Point3 icp_trans(frame.T_body(0,3), frame.T_body(1,3), frame.T_body(2,3));
+                gtsam::Pose3 relative_icp_pose(icp_rot, icp_trans);
+
+                double icp_sigma = std::max(frame.delta_yaw_fitness, 0.01);
+                auto icp_noise = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(6) << 0.05, 0.05, icp_sigma,  // Rot: Roll, Pitch (tightly constrained to 0 relative change), Yaw
+                                                                                          icp_sigma, icp_sigma, icp_sigma // Trans: X, Y, Z (Z is looser)
+                                                                                        ).finished()); 
+
+                new_factors_.add(gtsam::BetweenFactor<gtsam::Pose3>(X(last_radar_pose_key_), X(curr_idx), relative_icp_pose, icp_noise));                                                                   
                 last_radar_pose_key_ = curr_idx;
             }
 
@@ -273,8 +285,16 @@ namespace radar
                 if (full_estimate.exists(key))
                 {
                     gtsam::Pose3 pose = full_estimate.at<gtsam::Pose3>(key);
+                    gtsam::Matrix covariance = isam2_.marginalCovariance(key);
+
+                    double c_xx = covariance(3, 3);
+                    double c_yy = covariance(4, 4);
+                    double c_zz = covariance(5, 5);
+                    double c_xy = covariance(3, 4); 
+                    double c_xz = covariance(3, 5); 
+                    double c_yz = covariance(4, 5);
                     
-                    // TUM Format: timestamp x y z qx qy qz qw
+                    // Extended TUM Format: timestamp x y z qx qy qz qw c_xx c_yy c_zz c_xy c_xz c_yz
                     // Note: GTSAM quaternions are (w, x, y, z), Eigen is (x, y, z, w)
                     // pose.rotation().toQuaternion() returns an Eigen quaternion.
                     auto q = pose.rotation().toQuaternion();
@@ -283,7 +303,9 @@ namespace radar
                             << pose.translation().x() << " "
                             << pose.translation().y() << " "
                             << pose.translation().z() << " "
-                            << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << "\n";
+                            << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << " "
+                            << c_xx << " " << c_yy << " " << c_zz << " " 
+                            << c_xy << " " << c_xz << " " << c_yz << "\n";
                 }
             }
             

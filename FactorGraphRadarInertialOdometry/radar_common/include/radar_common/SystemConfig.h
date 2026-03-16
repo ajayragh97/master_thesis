@@ -35,6 +35,8 @@ namespace radar
             double isam2_relinearize_threshold = 0.1;
             size_t isam2_relinearize_skip = 10;
             double keyframe_rate = 0.01; // Hz - rate of keyframes
+            size_t gt_skip_rate = 10;
+            size_t update_rate = 10;
 
             // Extrinsci Transforms (Base ->IMU)
             Transform T_base_imu;
@@ -133,6 +135,8 @@ namespace radar
                 cfg.graph.isam2_relinearize_skip = config_json["graph"]["isam2"]["relinearize_skip"];
                 cfg.graph.keyframe_rate = config_json["graph"]["keyframe_rate"];
                 cfg.graph.zero_vel_thresh = config_json["reve"]["zero_vel_thresh"];
+                cfg.graph.gt_skip_rate = config_json["graph"]["gt_skip_rate"];
+                cfg.graph.update_rate = config_json["graph"]["update_rate"];
 
                 return cfg;
             }

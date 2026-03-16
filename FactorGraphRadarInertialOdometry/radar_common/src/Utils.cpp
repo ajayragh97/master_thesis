@@ -77,8 +77,8 @@ namespace radar
                 
                 ImuData data;
                 data.timestamp = t;
-                data.linear_acceleration = -Eigen::Vector3d(ax, ay, az);
-                data.angular_velocity = -Eigen::Vector3d(gx, gy, gz);
+                data.linear_acceleration = Eigen::Vector3d(ax, ay, az);
+                data.angular_velocity = Eigen::Vector3d(gx, gy, gz);
                 imu_vec.push_back(data);
             }
             return imu_vec;

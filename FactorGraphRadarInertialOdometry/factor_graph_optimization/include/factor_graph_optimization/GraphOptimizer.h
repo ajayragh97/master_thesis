@@ -40,6 +40,7 @@ namespace radar
                 // Counter to keep track of node indices
                 uint64_t current_node_idx_ = 0;
                 uint64_t last_radar_pose_key_ = 0;
+                int update_counter_ = 0;
 
 
                 // The most recently optimized states
@@ -68,7 +69,8 @@ namespace radar
                 void initialize(const gtsam::Pose3& initial_pose,
                                 const gtsam::Vector3& initial_velocity,
                                 const gtsam::imuBias::ConstantBias& initial_bias,
-                                const double& initial_timestamp);
+                                const double& initial_timestamp,
+                                const double& estimated_gravity);
                 
                 /*
                 @brief Add new synchronized frame and optimize
@@ -84,6 +86,9 @@ namespace radar
                  Format: timestamp, x, y, z, roll, pitch, yaw
                 */
                 void saveFullTrajectory(const std::string& filename);
+
+                // Exposing ISAM2 graph and values for visualization/debugging purposes
+                const gtsam::ISAM2& getISAM2() const { return isam2_; }
         };
     }
 }

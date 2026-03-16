@@ -102,13 +102,13 @@ PointCloud loadPointCloud(const std::string& filename)
 int main()
 {
     std::string base_dir = "/home/ajay/work/temp/aspen_run7/";
-    std::string data_dir = base_dir +  "single_chip/pointclouds/data/";
-    std::string stamp_path = base_dir + "single_chip/pointclouds/timestamps.txt";
+    std::string data_dir = base_dir +  "cascade/pointclouds/data/";
+    std::string stamp_path = base_dir + "cascade/pointclouds/timestamps.txt";
     std::string imu_data_path = base_dir + "imu/imu_data.txt";
     std::string imu_stamp_path = base_dir + "imu/timestamps.txt";
     
     // Output
-    std::string output_path = base_dir + "reve/single_chip_velocity_estimate_modular.txt";
+    std::string output_path = base_dir + "reve/cascade_velocity_estimate_cfar.txt";
     
     // Calibration
     std::string calib_dir = "/home/ajay/work/temp/calib/";
@@ -129,7 +129,7 @@ int main()
     // --- LOAD TRANSFORMS ---
     Transform t_radar, t_imu;
     bool tf_ok = true;
-    tf_ok &= corrector.loadTransform(tf_single_chip_path, t_radar);
+    tf_ok &= corrector.loadTransform(tf_cascade_path, t_radar);
     tf_ok &= corrector.loadTransform(tf_imu_path, t_imu);
 
     if (!tf_ok)

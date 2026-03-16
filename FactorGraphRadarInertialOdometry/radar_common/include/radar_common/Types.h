@@ -3,6 +3,7 @@
 #include <Eigen/Dense>
 #include <vector>
 #include <cmath>
+#include <gtsam/geometry/Pose3.h>
 
 namespace radar
 {
@@ -91,6 +92,11 @@ namespace radar
         // Linear velocity from REVE
         VelocityEstimate reve_velocity_body;
 
+        // Transformation matrix in body frame computed by ICP
+        Eigen::Matrix4d T_body; 
+        double icp_fitness = 0.0;
+        bool has_icp = false;
+
         // Delta yaw estimated from radar frame
         double delta_yaw = 0.0;
         double delta_yaw_fitness = 0.0;
@@ -98,6 +104,10 @@ namespace radar
         // Flags
         bool has_reve_velocity = false;
         bool has_delta_yaw = false;
+
+        // GT data as pseudo GPS
+        gtsam::Pose3 gt_pose;
+        bool has_gt_pose = false;
     };
     
     }

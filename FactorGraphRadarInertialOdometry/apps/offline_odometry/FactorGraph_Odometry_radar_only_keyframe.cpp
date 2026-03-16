@@ -99,7 +99,7 @@ std::vector<ImuData> loadImuDataVector(const std::string& data_path, const std::
 int main(int argc, char** argv)
 {
     
-    std::string config_path = "config.json"; // Default config path
+    std::string config_path = "../config.json"; // Default config path
     if (argc > 1) config_path = argv[1]; // Allow custom config path as command-line argument
 
     radar::common::SystemConfig cfg;

@@ -54,7 +54,30 @@ int main(int argc, char** argv)
     // Load data
     std::vector<double> timestamps = loadTimestamps(stamp_path);
     std::vector<ImuData> all_imu_data = loadImuDataVector(imu_data_path, imu_stamp_path);
+    size_t start_idx = 0;
+    //  <============================================================================================>
+    // RAW ICP odometry (for evaluation purposes)
+    std::string icp_output_path = base_dir + "reve/icp_raw_trajectory.txt";
+    std::ofstream icp_outFile(icp_output_path);
+    if (!icp_outFile.is_open()) {
+        std::cerr << "Error: Could not open " << icp_output_path << std::endl;
+    }
+    icp_outFile << std::fixed << std::setprecision(6);
 
+    // Initialize the global ICP tracking matrix with the starting pose
+    Eigen::Matrix4d T_global_icp = Eigen::Matrix4d::Identity();
+    Eigen::Quaterniond init_icp_q(cfg.icp.start_qw, cfg.icp.start_qx, cfg.icp.start_qy, cfg.icp.start_qz);
+    T_global_icp.block<3,3>(0,0) = init_icp_q.toRotationMatrix();
+    T_global_icp.block<3,1>(0,3) = Eigen::Vector3d(cfg.icp.start_tx, cfg.icp.start_ty, cfg.icp.start_tz);
+
+    // Write the first pose
+    icp_outFile << timestamps[start_idx] << " "
+                << cfg.icp.start_tx << " " << cfg.icp.start_ty << " " << cfg.icp.start_tz << " "
+                << cfg.icp.start_qx << " " << cfg.icp.start_qy << " " << cfg.icp.start_qz << " " << cfg.icp.start_qw << "\n";
+
+    //  <============================================================================================>
+
+    
     double TARGET_DT = 1.0 / cfg.graph.keyframe_rate; // Desired time interval between graph nodes 
 
     // Sanity check for timestamps to ensure their units
@@ -102,15 +125,6 @@ int main(int argc, char** argv)
 
     Eigen::Matrix4d T_base_radar = corrector.getRadarToBaseTransform();
     Eigen::Matrix4d T_radar_base = T_base_radar.inverse();
-
-    // Init modules
-    RadarEgoEstimator vel_estimator(cfg.reve);
-    RadarICP icp_solver(cfg.icp);
-    GraphOptimizer optimizer(cfg.graph);
-
-    optimizer.set2DMode(cfg.graph.use_2d_mode); // Set to false to optimize full 3D pose (x,y,z,roll,pitch,yaw)
-    size_t start_idx = 0;
-
     
     // initialize graph
     std::ofstream outFile(real_time_optimized_output_path);
@@ -172,7 +186,29 @@ int main(int argc, char** argv)
 
     gtsam::Vector3 init_velocity = gtsam::Vector3::Zero();
 
+    double mean_gravity = sqrt(pow(mean_acc.x(), 2) + pow(mean_acc.y(), 2) + pow(mean_acc.z(), 2));
+    cfg.graph.gravity = mean_gravity; // Update gravity in config based on measured value
+    
+    // Init modules
+    RadarEgoEstimator vel_estimator(cfg.reve);
+    RadarICP icp_solver(cfg.icp);
+    GraphOptimizer optimizer(cfg.graph);
+
+    optimizer.set2DMode(cfg.graph.use_2d_mode); // Set to false to optimize full 3D pose (x,y,z,roll,pitch,yaw)
+
+
     optimizer.initialize(init_pose, init_velocity, init_bias, timestamps[start_idx]);
+
+    // saving initial graph to file
+    std::cout << "Exporting initialized factor graph Topology to DOT file for visualization..." << std::endl;
+    std::ofstream os(base_dir + "visualization/init_factor_graph.dot");
+
+    gtsam::NonlinearFactorGraph graph = optimizer.getISAM2().getFactorsUnsafe();
+    gtsam::Values values = optimizer.getISAM2().getLinearizationPoint();
+
+    // Export graph as dot file
+    graph.saveGraph(os, values);
+    os.close();
 
     outFile << timestamps[start_idx] << " "
             << init_pose.translation().x() << " "
@@ -257,28 +293,33 @@ int main(int argc, char** argv)
         Eigen::Matrix4d T_icp_sensor  = icp_solver.compute(static_cloud, prev_cloud, T_guess_icp, cfg.graph.use_2d_mode);
         Eigen::Matrix4d M_body = T_base_radar * T_icp_sensor * T_radar_base; // Convert to Body Frame
 
+        
+
         radar_frame.delta_yaw = atan2(M_body(1,0), M_body(0,0));
         radar_frame.delta_yaw_fitness = icp_solver.getFitnessScore();
+        radar_frame.T_body = M_body;
         radar_frame.has_delta_yaw = true;
 
-        // ===============================
-        // Debug output for current frame
-        // ===============================
-        if (i % 20 == 0) 
-        { 
-            std::cout << "--- Frame " << i << " ---" << std::endl;
-            std::cout << "1. REVE Vel X (Body): " << radar_frame.reve_velocity_body.linear_velocity.x() << " m/s" << std::endl;
-            
-            if (!radar_frame.imu_measurements.empty()) 
-            {
-                std::cout << "2. IMU Accel X:       " << radar_frame.imu_measurements.back().linear_acceleration.x() << " m/s^2" << std::endl;
-                std::cout << "3. IMU Gyro Z (Yaw):  " << radar_frame.imu_measurements.back().angular_velocity.z() * dt_radar << " rad" << std::endl;
-            }
-            std::cout << "4. ICP Delta Yaw:     " << radar_frame.delta_yaw << " rad" << std::endl;
-            std::cout << "-----------------------" << std::endl;
-        }
+        
 
         // Log evaluation data
+
+        // ACCUMULATE AND SAVE PURE ICP ODOMETRY
+        // M_body is the transform from the PREVIOUS frame to the CURRENT frame.
+        // We multiply the global pose by this local movement.
+        T_global_icp = T_global_icp * M_body;
+
+        // Extract translation and rotation
+        Eigen::Vector3d icp_t = T_global_icp.block<3,1>(0,3);
+        Eigen::Quaterniond icp_q(T_global_icp.block<3,3>(0,0));
+        icp_q.normalize();
+
+        // Write to file (TUM Format)
+        icp_outFile << current_radar_time << " "
+                    << icp_t.x() << " " << icp_t.y() << " " << icp_t.z() << " "
+                    << icp_q.x() << " " << icp_q.y() << " " << icp_q.z() << " " << icp_q.w() << "\n";
+        // =======================================================
+
         // Get the last IMU reading for this frame (as a sanity check sample)
         double imu_ax = 0, imu_ay = 0, imu_az = 0;
         double imu_wx = 0, imu_wy = 0, imu_wz = 0;
@@ -322,6 +363,35 @@ int main(int argc, char** argv)
                 << optimized_pose.rotation().toQuaternion().y() << " "
                 << optimized_pose.rotation().toQuaternion().z() << " "
                 << optimized_pose.rotation().toQuaternion().w() << "\n";    
+        
+        // ===============================
+        // Debug output for current frame
+        // ===============================
+        if (i % 20 == 0) 
+        { 
+            std::cout << "--- Frame " << i << " ---" << std::endl;
+            std::cout << "1. REVE Vel X (Body): " << radar_frame.reve_velocity_body.linear_velocity.x() << " m/s" << std::endl;
+            
+            if (!radar_frame.imu_measurements.empty()) 
+            {
+                std::cout << "2. IMU Accel X:       " << radar_frame.imu_measurements.back().linear_acceleration.x() << " m/s^2" << std::endl;
+                std::cout << "3. IMU Gyro Z (Yaw):  " << radar_frame.imu_measurements.back().angular_velocity.z() * dt_radar << " rad" << std::endl;
+            }
+            std::cout << "4. ICP Delta Yaw:     " << radar_frame.delta_yaw << " rad" << std::endl;
+            std::cout << "5. ICP translation:     [" << M_body(0,3) << ", " << M_body(1,3) << ", " << M_body(2,3) << "] m" << std::endl;
+            std::cout << "-----------------------" << std::endl;
+
+            // Saving current graph to file
+            std::cout << "Exporting factor graph Topology to DOT file for visualization..." << std::endl;
+            std::ofstream os(base_dir + "visualization/factor_graph_idx_" + std::to_string(i) + ".dot");
+
+            gtsam::NonlinearFactorGraph graph = optimizer.getISAM2().getFactorsUnsafe();
+            gtsam::Values values = optimizer.getISAM2().getLinearizationPoint();
+
+            // Export graph as dot file
+            graph.saveGraph(os, values);
+            os.close();
+        }
 
         // Progress output
         if (i % 100 == 0)
@@ -335,6 +405,7 @@ int main(int argc, char** argv)
     }
 
     outFile.close();
+    icp_outFile.close();
 
     std::cout << "Fixed-Rate Optimization complete. " << std::endl;
     std::cout << "Real-time optimized trajectory saved to: " << real_time_optimized_output_path << std::endl;

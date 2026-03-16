@@ -6,7 +6,7 @@ import os
 # Configuration / File Paths
 # ==========================================
 # Update these paths to point to your actual files
-ESTIMATED_TRAJ_FILE = '/home/ajay/work/temp/aspen_run7/reve/single_chip_odometry_full_optimized.txt'
+ESTIMATED_TRAJ_FILE = '/home/ajay/work/temp/aspen_run7/reve/gt_aided_odometry_final_traj.txt'
 GT_POSES_FILE       = '/home/ajay/work/temp/aspen_run7/groundtruth/groundtruth_poses.txt'
 GT_TIMES_FILE       = '/home/ajay/work/temp/aspen_run7/groundtruth/timestamps.txt'
 

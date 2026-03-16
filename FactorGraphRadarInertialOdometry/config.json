@@ -2,7 +2,7 @@
     "dataset": {
         "base_dir": "/home/ajay/work/temp/aspen_run7/",
         "calib_dir": "calib",
-        "output_filename": "reve/single_chip_odometry",
+        "output_filename": "reve/gt_aided_odometry",
         "static_duration": 5.0,
         "sensor": "single_chip"
     },
@@ -11,7 +11,7 @@
         "tf_imu_path": "/home/ajay/work/temp/calib/transforms/base_to_imu.txt"
     },
     "reve": {
-        "ransac_iter": 100,
+        "ransac_iter": 200,
         "min_dist": 0.5,
         "max_dist": 10.0,
         "min_db": 50.0,
@@ -30,22 +30,24 @@
         "intensity_threshold": 0.25,
         "transformation_epsilon": 1e-6,
         "euclidean_fitness_epsilon": 1e-6,
-        "dynamic_point_vel_thresh": 0.5,
-        "start_tx": 0.0,
-        "start_ty": 0.0,
-        "start_tz": 0.0,
-        "start_qx": 0.0 ,
-        "start_qy": 0.0,
-        "start_qz": 1.0,
-        "start_qw": 0.0
+        "dynamic_point_vel_thresh": 0.25,
+        "start_tx": -0.0465733426578,
+        "start_ty": -0.0340903515794,
+        "start_tz": -0.0261421280906,
+        "start_qx": -0.0246014325265 ,
+        "start_qy": -0.00101571297063,
+        "start_qz": -0.00310958606125,
+        "start_qw": 0.999691986724
     },
     "graph": {
         "use_2d_mode": false,
         "gravity": 9.81,
         "keyframe_rate": 50.0,
+        "gt_skip_rate": 1,
+        "update_rate": 10,
         "noise": {
-            "accel_sigma": 1.0e-2,
-            "gyro_sigma": 1.0e-2,
+            "accel_sigma": 10,
+            "gyro_sigma": 10,
             "accel_bias_rw_sigma": 1.0e-2,
             "gyro_bias_rw_sigma": 1.0e-3
         },
