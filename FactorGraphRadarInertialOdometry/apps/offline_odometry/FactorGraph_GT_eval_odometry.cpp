@@ -47,6 +47,7 @@ int main(int argc, char** argv)
     corrector.loadTransform(cfg.tf_imu_path, t_imu);
     corrector.setTransform(t_radar, t_imu);
     corrector.loadImuData(imu_data_path, imu_stamp_path);
+    cfg.graph.T_base_imu = t_imu;
 
     Eigen::Matrix4d T_base_radar = corrector.getRadarToBaseTransform();
     Eigen::Matrix4d T_radar_base = T_base_radar.inverse();
