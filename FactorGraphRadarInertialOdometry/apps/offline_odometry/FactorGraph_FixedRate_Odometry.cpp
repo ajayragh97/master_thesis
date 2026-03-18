@@ -196,8 +196,8 @@ int main(int argc, char** argv)
 
     optimizer.set2DMode(cfg.graph.use_2d_mode); // Set to false to optimize full 3D pose (x,y,z,roll,pitch,yaw)
 
-
-    optimizer.initialize(init_pose, init_velocity, init_bias, timestamps[start_idx]);
+    ImuBias imu_bias;
+    optimizer.initialize(init_pose, init_velocity, init_bias, timestamps[start_idx], mean_gravity, imu_bias);
 
     // saving initial graph to file
     std::cout << "Exporting initialized factor graph Topology to DOT file for visualization..." << std::endl;

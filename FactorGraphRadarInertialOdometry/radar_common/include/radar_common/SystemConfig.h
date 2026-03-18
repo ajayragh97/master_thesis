@@ -21,8 +21,12 @@ namespace radar
             // IMU noise parameters
             double accel_noise_sigma = 2.45e-4;
             double gyro_noise_sigma = 8.73e-5;
-            double accel_bias_rw_sigma = 1.0e-4;
-            double gyro_bias_rw_sigma = 4.0e-5;
+            double accel_bias_rw_sigma_x = 1.0e-4;
+            double accel_bias_rw_sigma_y = 1.0e-4;
+            double accel_bias_rw_sigma_z = 1.0e-4;
+            double gyro_bias_rw_sigma_x = 4.0e-5;
+            double gyro_bias_rw_sigma_y = 4.0e-5;
+            double gyro_bias_rw_sigma_z = 4.0e-5;
 
             // Prior Noise (Init Confidence)
             double prior_position_sigma = 0.01;
@@ -37,12 +41,19 @@ namespace radar
             double keyframe_rate = 0.01; // Hz - rate of keyframes
             size_t gt_skip_rate = 10;
             size_t update_rate = 10;
+            double preinegration_sig_x = 0.011525434466888276;
+            double preinegration_sig_y = 0.011525434466888276;
+            double preinegration_sig_z = 0.011525434466888276;
 
             // Extrinsci Transforms (Base ->IMU)
             Transform T_base_imu;
 
             // ZUPT constraint (Zero velocity)
             double zero_vel_thresh = 0.05;
+
+            // measurement noise of "GPS" (GT) pose
+            double gt_sigma_position = 0.001;
+            double gt_sigma_orientation = 0.002;
         };
 
         struct DatasetConfig
@@ -124,8 +135,12 @@ namespace radar
                 cfg.graph.gravity = config_json["graph"].value("gravity", 9.81);
                 cfg.graph.accel_noise_sigma = config_json["graph"]["noise"]["accel_sigma"];
                 cfg.graph.gyro_noise_sigma = config_json["graph"]["noise"]["gyro_sigma"];
-                cfg.graph.accel_bias_rw_sigma = config_json["graph"]["noise"]["accel_bias_rw_sigma"];
-                cfg.graph.gyro_bias_rw_sigma = config_json["graph"]["noise"]["gyro_bias_rw_sigma"];
+                cfg.graph.accel_bias_rw_sigma_x = config_json["graph"]["noise"]["accel_bias_rw_sigma_x"];
+                cfg.graph.accel_bias_rw_sigma_y = config_json["graph"]["noise"]["accel_bias_rw_sigma_y"];
+                cfg.graph.accel_bias_rw_sigma_z = config_json["graph"]["noise"]["accel_bias_rw_sigma_z"];
+                cfg.graph.gyro_bias_rw_sigma_x = config_json["graph"]["noise"]["gyro_bias_rw_sigma_x"];
+                cfg.graph.gyro_bias_rw_sigma_y = config_json["graph"]["noise"]["gyro_bias_rw_sigma_y"];
+                cfg.graph.gyro_bias_rw_sigma_z = config_json["graph"]["noise"]["gyro_bias_rw_sigma_z"];
                 cfg.graph.prior_position_sigma = config_json["graph"]["sigma"]["prior_position"];
                 cfg.graph.prior_orientation_sigma = config_json["graph"]["sigma"]["prior_orientation"];
                 cfg.graph.prior_vel_sigma = config_json["graph"]["sigma"]["prior_vel"];
@@ -137,7 +152,11 @@ namespace radar
                 cfg.graph.zero_vel_thresh = config_json["reve"]["zero_vel_thresh"];
                 cfg.graph.gt_skip_rate = config_json["graph"]["gt_skip_rate"];
                 cfg.graph.update_rate = config_json["graph"]["update_rate"];
-
+                cfg.graph.gt_sigma_position = config_json["graph"]["noise"]["gt_sigma_position"];
+                cfg.graph.gt_sigma_orientation = config_json["graph"]["noise"]["gt_sigma_orientation"];
+                cfg.graph.preinegration_sig_x = config_json["graph"]["noise"]["preinegration_sig_x"];
+                cfg.graph.preinegration_sig_y = config_json["graph"]["noise"]["preinegration_sig_y"];
+                cfg.graph.preinegration_sig_z = config_json["graph"]["noise"]["preinegration_sig_z"];
                 return cfg;
             }
         };

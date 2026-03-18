@@ -83,5 +83,103 @@ namespace radar
             }
             return imu_vec;
         }
+
+        std::vector<GTData> loadGroundTruth(const std::string& pose_file, const std::string& time_file)
+        {
+            std::vector<GTData> gt_list;
+            std::ifstream f_pose(pose_file), f_time(time_file);
+            double t, x, y, z, qx, qy, qz, qw;
+            while (f_time >> t && f_pose >> x >> y >> z >> qx >> qy >> qz >> qw) 
+            {
+                gt_list.push_back({t, gtsam::Pose3(gtsam::Rot3::Quaternion(qw, qx, qy, qz), gtsam::Point3(x, y, z))});
+            }
+            return gt_list;
+        }
+
+        gtsam::Pose3 getClosestGTPose(const std::vector<GTData>& gt_list, double target_time) 
+        {
+            auto it = std::min_element(gt_list.begin(), gt_list.end(),
+                [target_time](const GTData& a, const GTData& b) { return std::abs(a.timestamp - target_time) < std::abs(b.timestamp - target_time); });
+            return it->pose;
+        }
+
+        int getClosestRadarIdx(const std::vector<double>& timestamps, double target_time) 
+        {
+            auto it = std::min_element(timestamps.begin(), timestamps.end(),
+                [target_time](double a, double b) { return std::abs(a - target_time) < std::abs(b - target_time); });
+            return std::distance(timestamps.begin(), it);
+        }
+
+        ImuBias getImuBias(const std::vector<ImuData>& all_imu_data, const double& static_duration)
+        {
+            ImuBias imu_bias;
+            
+            // Safety check
+            if (all_imu_data.empty()) return imu_bias;
+
+            int static_count = 0;
+            std::vector<double> delta_t_imu;
+
+            // ==========================================
+            // 1. Calculate Mean (Bias) and dt
+            // ==========================================
+            for (const auto& imu : all_imu_data) 
+            {
+                if (imu.timestamp - all_imu_data[0].timestamp < static_duration) 
+                {
+                    imu_bias.bias_acc += imu.linear_acceleration;
+                    imu_bias.bias_gyro += imu.angular_velocity;
+
+                    // Look backward to calculate dt to avoid out-of-bounds
+                    if (static_count > 0)
+                    {
+                        delta_t_imu.push_back(imu.timestamp - all_imu_data[static_count - 1].timestamp);
+                    }
+                    static_count++;
+                } 
+                else break;
+            }  
+
+            if (static_count > 0) 
+            { 
+                imu_bias.bias_acc /= static_count; 
+                imu_bias.bias_gyro /= static_count; 
+                
+                // Divide by the actual size of the delta array
+                if (!delta_t_imu.empty()) {
+                    double sum_time_diff = std::accumulate(delta_t_imu.begin(), delta_t_imu.end(), 0.0);
+                    imu_bias.mean_imu_dt = sum_time_diff / delta_t_imu.size();
+                }
+            }
+
+            // ==========================================
+            // 2. Calculate Standard Deviations
+            // ==========================================
+            for (const auto& imu : all_imu_data) 
+            {
+                if (imu.timestamp - all_imu_data[0].timestamp < static_duration)
+                {
+                    // Use .square() and convert back to .matrix() before accumulating
+                    imu_bias.std_acc += (imu.linear_acceleration - imu_bias.bias_acc).array().square().matrix();
+                    imu_bias.std_gyro += (imu.angular_velocity - imu_bias.bias_gyro).array().square().matrix();
+                }
+                else break;
+            }
+            
+            // Divide by (N - 1) for sample standard deviation
+            if (static_count > 1)
+            {
+                imu_bias.std_acc = (imu_bias.std_acc / (static_count - 1)).cwiseSqrt();
+                imu_bias.std_gyro = (imu_bias.std_gyro / (static_count - 1)).cwiseSqrt();
+            }
+            else 
+            {
+                // Fallback if only 1 frame was provided
+                imu_bias.std_acc = Eigen::Vector3d::Zero();
+                imu_bias.std_gyro = Eigen::Vector3d::Zero();
+            }
+
+            return imu_bias;
+        }
     }
 }

@@ -70,7 +70,8 @@ namespace radar
                                 const gtsam::Vector3& initial_velocity,
                                 const gtsam::imuBias::ConstantBias& initial_bias,
                                 const double& initial_timestamp,
-                                const double& estimated_gravity);
+                                const double& estimated_gravity,
+                                const radar::common::ImuBias& imu_bias);
                 
                 /*
                 @brief Add new synchronized frame and optimize

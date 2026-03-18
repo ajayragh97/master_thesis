@@ -180,7 +180,8 @@ int main(int argc, char** argv)
     gtsam::Vector3 init_velocity = gtsam::Vector3::Zero();
     gtsam::imuBias::ConstantBias init_bias;
 
-    optimizer.initialize(init_pose, init_velocity, init_bias, timestamps[start_idx]);
+    ImuBias imu_bias;
+    optimizer.initialize(init_pose, init_velocity, init_bias, timestamps[start_idx], cfg.graph.gravity, imu_bias);
 
     PointCloud prev_cloud;
     size_t current_imu_idx = 0; // To keep track of IMU data 

@@ -69,46 +69,64 @@ namespace radar
         /*
         @brief A single IMU measurement
         */
-    struct ImuData
-    {
-        double timestamp;
-        Eigen::Vector3d linear_acceleration;
-        Eigen::Vector3d angular_velocity;
-    };
+        struct ImuData
+        {
+            double timestamp;
+            Eigen::Vector3d linear_acceleration;
+            Eigen::Vector3d angular_velocity;
+        };
 
-    /*
-    @brief A single synchronized frame of data to be fed into the factor graph.
-    This contains the radar measurements at time t_i and all IMU measurements
-    between t_i-1 and t_i.
-    */
-    struct OptimizationFrame
-    {
-        // Time stamp of radar frame
-        double timestamp = 0.0;
+        /*
+        @brief Bias of IMU accelerometer and gyroscope readings for initialization
+        */
+       struct ImuBias
+       {
+            Eigen::Vector3d bias_acc = Eigen::Vector3d::Zero();
+            Eigen::Vector3d std_acc = Eigen::Vector3d::Zero();
+            Eigen::Vector3d bias_gyro = Eigen::Vector3d::Zero();
+            Eigen::Vector3d std_gyro = Eigen::Vector3d::Zero();
+            double mean_imu_dt = 1e-3;
+       };
 
-        // All IMU measurements
-        std::vector<ImuData> imu_measurements;
+        /*
+        @brief A single synchronized frame of data to be fed into the factor graph.
+        This contains the radar measurements at time t_i and all IMU measurements
+        between t_i-1 and t_i.
+        */
+        struct OptimizationFrame
+        {
+            // Time stamp of radar frame
+            double timestamp = 0.0;
 
-        // Linear velocity from REVE
-        VelocityEstimate reve_velocity_body;
+            // All IMU measurements
+            std::vector<ImuData> imu_measurements;
 
-        // Transformation matrix in body frame computed by ICP
-        Eigen::Matrix4d T_body; 
-        double icp_fitness = 0.0;
-        bool has_icp = false;
+            // Linear velocity from REVE
+            VelocityEstimate reve_velocity_body;
 
-        // Delta yaw estimated from radar frame
-        double delta_yaw = 0.0;
-        double delta_yaw_fitness = 0.0;
+            // Transformation matrix in body frame computed by ICP
+            Eigen::Matrix4d T_body; 
+            double icp_fitness = 0.0;
+            bool has_icp = false;
 
-        // Flags
-        bool has_reve_velocity = false;
-        bool has_delta_yaw = false;
+            // Delta yaw estimated from radar frame
+            double delta_yaw = 0.0;
+            double delta_yaw_fitness = 0.0;
 
-        // GT data as pseudo GPS
-        gtsam::Pose3 gt_pose;
-        bool has_gt_pose = false;
-    };
+            // Flags
+            bool has_reve_velocity = false;
+            bool has_delta_yaw = false;
+
+            // GT data as pseudo GPS
+            gtsam::Pose3 gt_pose;
+            bool has_gt_pose = false;
+        };
+
+        struct GTData 
+        {
+            double timestamp;
+            gtsam::Pose3 pose;
+        };
     
     }
     

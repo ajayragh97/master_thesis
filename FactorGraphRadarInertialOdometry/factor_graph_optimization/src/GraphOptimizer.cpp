@@ -2,6 +2,9 @@
 #include <gtsam/slam/PriorFactor.h>
 #include <gtsam/navigation/ImuFactor.h>
 #include <gtsam/slam/BetweenFactor.h>
+#include <iostream>
+#include <fstream>
+#include <iomanip>
 
 using gtsam::symbol_shorthand::X; // Pose
 using gtsam::symbol_shorthand::V; // Velocity
@@ -18,20 +21,6 @@ namespace radar
             params.relinearizeThreshold = config_.isam2_relinearize_threshold;
             params.relinearizeSkip = config_.isam2_relinearize_skip;
             isam2_ = gtsam::ISAM2(params);
-
-            // Setting up IMU pre integration parameters
-            auto imu_params = gtsam::PreintegrationParams::MakeSharedU(config_.gravity);
-            gtsam::Point3 t(config_.T_base_imu.translation);
-            gtsam::Rot3 R(config_.T_base_imu.rotation);
-            imu_params->setBodyPSensor(gtsam::Pose3(R, t));
-
-            // loading IMU covariance
-            imu_params->accelerometerCovariance = gtsam::Matrix33::Identity() * std::pow(config_.accel_noise_sigma, 2);
-            imu_params->gyroscopeCovariance = gtsam::Matrix33::Identity() * std::pow(config_.gyro_noise_sigma, 2);
-            imu_params->integrationCovariance = gtsam::Matrix33::Identity() * 1e-8;
-            
-            preintegrated_imu_ = std::make_shared<gtsam::PreintegratedImuMeasurements>(imu_params,
-                                                                                       gtsam::imuBias::ConstantBias());
 
             // Setup 2D Constraint Models
             /*Using a Diagonal noise model
@@ -50,8 +39,51 @@ namespace radar
         void GraphOptimizer::initialize(const gtsam::Pose3& initial_pose,
                                         const gtsam::Vector3& initial_velocity,
                                         const gtsam::imuBias::ConstantBias& initial_bias,
-                                        const double& initial_timestamp)
+                                        const double& initial_timestamp,
+                                        const double& estimated_gravity,
+                                        const radar::common::ImuBias& imu_bias)
         {
+            // setup preintegrator with estimated gravity
+            auto imu_params = gtsam::PreintegrationParams::MakeSharedU(estimated_gravity);
+            gtsam::Point3 t(config_.T_base_imu.translation);
+            gtsam::Rot3 R(config_.T_base_imu.rotation);
+            imu_params->setBodyPSensor(gtsam::Pose3(R, t));
+
+            // loading IMU covariance
+            // if (imu_bias.std_acc != Eigen::Vector3d::Zero())
+            // {
+            //     std::cout << "seting preintegrator covariances" << std::endl;
+            //     // Covariance Matrix Accelerometer
+            //     Eigen::DiagonalMatrix<double, 3> cov_acc(pow(imu_bias.std_acc.x(), 2),
+            //                                              pow(imu_bias.std_acc.y(), 2), 
+            //                                              pow(imu_bias.std_acc.z(), 2));
+                
+            //     // Covariance Matrix Gyroscope
+            //     Eigen::DiagonalMatrix<double, 3> cov_gyro(pow(imu_bias.std_gyro.x(), 2),
+            //                                              pow(imu_bias.std_gyro.y(), 2), 
+            //                                              pow(imu_bias.std_gyro.z(), 2));
+
+            //     // Covariance Matrix Integration
+            //     Eigen::DiagonalMatrix<double, 3> cov_integration(pow(config_.preinegration_sig_x, 2),
+            //                                              pow(config_.preinegration_sig_y, 2), 
+            //                                              pow(config_.preinegration_sig_z, 2));
+                
+            //     imu_params->setAccelerometerCovariance(cov_acc);
+            //     imu_params->setGyroscopeCovariance(cov_gyro);
+            //     imu_params->setIntegrationCovariance(cov_integration);
+            //     imu_params->setUse2ndOrderCoriolis(false);    
+            // }
+            // else
+            // {
+                imu_params->accelerometerCovariance = gtsam::Matrix33::Identity() * std::pow(config_.accel_noise_sigma, 2);
+                imu_params->gyroscopeCovariance = gtsam::Matrix33::Identity() * std::pow(config_.gyro_noise_sigma, 2);
+                imu_params->integrationCovariance = gtsam::Matrix33::Identity() * 1e-8;
+            // }
+            
+            
+            preintegrated_imu_ = std::make_shared<gtsam::PreintegratedImuMeasurements>(imu_params,
+                                                                                       initial_bias);
+
             // Creating priors 
             auto pose_noise = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(6) <<  config_.prior_position_sigma,
                                                                                         config_.prior_position_sigma, 
@@ -92,10 +124,20 @@ namespace radar
             current_node_idx_ = 0;
             current_timestamp_ = initial_timestamp;
             last_radar_pose_key_ = 0;
+            update_counter_ = 0;
 
             // Clear timestamp history and add initial timestamp
             timestamp_history_.clear();
             timestamp_history_.push_back(initial_timestamp);
+
+            // update bias standard deviations (sigma) after init
+            // config_.accel_bias_rw_sigma_x = imu_bias.std_acc.x();
+            // config_.accel_bias_rw_sigma_y = imu_bias.std_acc.y();
+            // config_.accel_bias_rw_sigma_z = imu_bias.std_acc.z();
+
+            // config_.gyro_bias_rw_sigma_x = imu_bias.std_gyro.x();
+            // config_.gyro_bias_rw_sigma_y = imu_bias.std_gyro.y();
+            // config_.gyro_bias_rw_sigma_z = imu_bias.std_gyro.z();
         }
 
         void GraphOptimizer::addFrame(const radar::common::OptimizationFrame& frame)
@@ -104,12 +146,17 @@ namespace radar
             // ==============================================================
             // SAFETY CHECK FIRST: Do not increment index if data is invalid
             // ==============================================================
-            if (frame.imu_measurements.empty()) 
+            if (frame.imu_measurements.empty() && current_node_idx_ > 0) 
             {
-                std::cerr << "CRITICAL: Frame at " << std::fixed << std::setprecision(6) 
-                        << frame.timestamp << " has NO IMU measurements. Skipping graph update." << std::endl;
-                return; 
+                std::cerr << "WARNING: Empty IMU frame! Integrating blind gap to preserve graph chain." << std::endl;
+                // We integrate 'zero' movement over the time gap to prevent GTSAM from crashing
+                preintegrated_imu_->integrateMeasurement(
+                    gtsam::Vector3::Zero(), gtsam::Vector3::Zero(), frame.timestamp - current_timestamp_);
             }
+
+
+
+            int imu_bias_count = 0;
 
             // update pose index
             uint64_t prev_idx = current_node_idx_;
@@ -119,109 +166,101 @@ namespace radar
             // Add timestamp to history
             timestamp_history_.push_back(frame.timestamp);
 
-            // preintegrate IMU measurements
-            if (frame.imu_measurements.empty()) 
+            double last_t = current_timestamp_;
+            for (const auto& imu : frame.imu_measurements)
             {
-                std::cerr << "CRITICAL: No IMU measurements passed to optimizer! Cannot integrate." << std::endl;
-                return; // Safely abort this frame
-            }
-
-            for (size_t i = 0; i < frame.imu_measurements.size(); ++i)
-            {
-                const radar::common::ImuData& curr_imu_frame = frame.imu_measurements[i];
-                double dt = 0;
-
-                if (i == 0)
+                double dt = imu.timestamp - last_t;
+                if (dt > 1e-6) 
                 {
-                    dt = curr_imu_frame.timestamp - current_timestamp_;
+                    preintegrated_imu_ -> integrateMeasurement(imu.linear_acceleration, imu.angular_velocity, dt);
                 }
-                else
-                {
-                    dt = curr_imu_frame.timestamp - frame.imu_measurements[i-1].timestamp;
-                }
-                // if (dt <= 1e-4) 
-                // {
-                //     // dt = 1e-4; // Force a tiny positive delta
-                //     std::cerr << "WARNING: Too small dt between IMU measurements. SKIPPING FRAME.." << std::endl;
-                //     continue;
-                // }
-
-                preintegrated_imu_->integrateMeasurement(curr_imu_frame.linear_acceleration, 
-                                                        curr_imu_frame.angular_velocity,
-                                                        dt);                
+                last_t = imu.timestamp;
+                imu_bias_count++;
             }
 
             // IMPORTANT: Integrate the final gap between the last IMU message and the Radar timestamp
-            double final_dt = frame.timestamp - frame.imu_measurements.back().timestamp;
-            if (final_dt > 0.0) 
+            double final_dt = frame.timestamp - last_t;
+            if (final_dt > 1e-6 && !frame.imu_measurements.empty()) 
             {
                 preintegrated_imu_->integrateMeasurement(
                     frame.imu_measurements.back().linear_acceleration, 
                     frame.imu_measurements.back().angular_velocity, 
                     final_dt);
+                
+                imu_bias_count++;
             }
+
+            
 
             // adding imu factor to new_factors_
             new_factors_.add(gtsam::ImuFactor(X(prev_idx), V(prev_idx), X(curr_idx), V(curr_idx), B(prev_idx), *preintegrated_imu_));
 
             // adding IMU bias random walk to new_factors_
-            // Time scaled random walk
-            double dt_bias = frame.timestamp - current_timestamp_;
-            if (dt_bias <= 1e-6) dt_bias = 0.01;
-
+            // scaled based on count of imu pre integration nodes
+            double dt_frame = frame.timestamp - current_timestamp_;
             
-            auto bias_noise_model = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(6) <<config_.accel_bias_rw_sigma * std::sqrt(dt_bias),
-                                                                                            config_.accel_bias_rw_sigma * std::sqrt(dt_bias),
-                                                                                            config_.accel_bias_rw_sigma * std::sqrt(dt_bias),
-                                                                                            config_.gyro_bias_rw_sigma * std::sqrt(dt_bias),
-                                                                                            config_.gyro_bias_rw_sigma * std::sqrt(dt_bias),
-                                                                                            config_.gyro_bias_rw_sigma * std::sqrt(dt_bias)).finished());
+            auto bias_noise_model = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(6) <<config_.accel_bias_rw_sigma_x * std::sqrt(dt_frame),
+                                                                                            config_.accel_bias_rw_sigma_y * std::sqrt(dt_frame),
+                                                                                            config_.accel_bias_rw_sigma_z * std::sqrt(dt_frame),
+                                                                                            config_.gyro_bias_rw_sigma_x * std::sqrt(dt_frame),
+                                                                                            config_.gyro_bias_rw_sigma_y * std::sqrt(dt_frame),
+                                                                                            config_.gyro_bias_rw_sigma_z * std::sqrt(dt_frame)).finished());
                                                                                             
             new_factors_.add(gtsam::BetweenFactor<gtsam::imuBias::ConstantBias>(B(prev_idx), B(curr_idx), 
                                                                                 gtsam::imuBias::ConstantBias(), 
                                                                                 bias_noise_model));
+
+            // Ground truth "GPS" prior
+            if (frame.has_gt_pose)
+            {
+                // Note gtsam by default uses rotation first then translation
+                auto gt_meas_sigma = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(6) <<   config_.gt_sigma_orientation,
+                                                                                                config_.gt_sigma_orientation,
+                                                                                                config_.gt_sigma_orientation,
+                                                                                                config_.gt_sigma_position,
+                                                                                                config_.gt_sigma_position,
+                                                                                                config_.gt_sigma_position).finished());
+                new_factors_.add(gtsam::PriorFactor<gtsam::Pose3>(X(curr_idx), frame.gt_pose, gt_meas_sigma));
+            }
 
             // adding velocity factor to new_factors_
             if (frame.has_reve_velocity)
             {
                 auto velocity_covariance = gtsam::noiseModel::Gaussian::Covariance(frame.reve_velocity_body.covariance);                                 
                 new_factors_.add(RadarVelocityFactor(X(curr_idx), V(curr_idx), frame.reve_velocity_body.linear_velocity, velocity_covariance));
-
-                // Adding a unary factor acting for Zero velocity when REVE estimates very low velocity
-                if(frame.reve_velocity_body.linear_velocity.norm() <= config_.zero_vel_thresh)
-                {
-                    // High confidence prior (0.01 m/s)
-                    auto zupt_noise = gtsam::noiseModel::Isotropic::Sigma(3, 0.01);
-                    new_factors_.add(gtsam::PriorFactor<gtsam::Vector3>(V(curr_idx), 
-                                                        gtsam::Vector3(0,0,0), 
-                                                        zupt_noise));
-                }
             }
             
-            // adding delta yaw factor
-            if (frame.has_delta_yaw)
+            // Radar ICP transform factor
+            if (frame.has_icp && last_radar_pose_key_ != 0)
             {
-                double yaw_sigma = std::max(frame.delta_yaw_fitness, 1e-4); 
-                auto delta_yaw_noise_model = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(1) << yaw_sigma).finished());
-                new_factors_.add(DeltaYawFactor(X(last_radar_pose_key_), X(curr_idx), frame.delta_yaw, delta_yaw_noise_model));
-
-                // Adding ICP pose estimate as between factor
-                gtsam::Rot3 icp_rot = gtsam::Rot3(frame.T_body.topLeftCorner(3, 3));
-                gtsam::Point3 icp_trans(frame.T_body(0,3), frame.T_body(1,3), frame.T_body(2,3));
+                gtsam::Rot3 icp_rot(frame.T_body.block<3,3>(0,0));
+                gtsam::Point3 icp_trans(frame.T_body(0,3), frame.T_body(1,3), frame.T_body(2, 3));
                 gtsam::Pose3 relative_icp_pose(icp_rot, icp_trans);
 
-                double icp_sigma = std::max(frame.delta_yaw_fitness, 0.01);
-                auto icp_noise = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(6) << 0.05, 0.05, icp_sigma,  // Rot: Roll, Pitch (tightly constrained to 0 relative change), Yaw
-                                                                                          icp_sigma, icp_sigma, icp_sigma // Trans: X, Y, Z (Z is looser)
-                                                                                        ).finished()); 
-
-                new_factors_.add(gtsam::BetweenFactor<gtsam::Pose3>(X(last_radar_pose_key_), X(curr_idx), relative_icp_pose, icp_noise));                                                                   
-                last_radar_pose_key_ = curr_idx;
+                // standard deviation  = sqrt(MSE), adding a floor to prevent overconfidence
+                double icp_std = std::max(sqrt(frame.icp_fitness), 0.01);
+                auto icp_noise = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(6) <<icp_std,
+                                                                                        icp_std, 
+                                                                                        icp_std,
+                                                                                        icp_std,
+                                                                                        icp_std,
+                                                                                        icp_std * 2).finished());
+                                
+                new_factors_.add(gtsam::BetweenFactor<gtsam::Pose3>(X(last_radar_pose_key_), X(curr_idx), relative_icp_pose, icp_noise));
             }
 
-            // Apply 2D constraints if in 2D mode
+            // if in 2d mode
             if (use_2d_mode_)
             {
+                // adding delta yaw factor
+                if (frame.has_delta_yaw)
+                {
+                    double yaw_sigma = std::max(frame.delta_yaw_fitness, 1e-4); 
+                    auto delta_yaw_noise_model = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(1) << yaw_sigma).finished());
+                    new_factors_.add(DeltaYawFactor(X(last_radar_pose_key_), X(curr_idx), frame.delta_yaw, delta_yaw_noise_model));
+                    last_radar_pose_key_ = curr_idx;
+                }
+
                 // 1. Constrain Pose: Force Roll=0, Pitch=0, Z=Constant
                 // We create a "Target" pose that has 0 roll/pitch and the initial Z height.
                 // The loose noise model ignores the X,Y,Yaw diffs, but penalizes Z,Roll,Pitch diffs.
@@ -235,6 +274,9 @@ namespace radar
                 gtsam::Vector3 vel_target(0.0, 0.0, 0.0);
                 new_factors_.add(gtsam::PriorFactor<gtsam::Vector3>(V(curr_idx), vel_target, planar_vel_noise_));
             }
+
+            if (frame.has_icp || curr_idx == 0) last_radar_pose_key_ = curr_idx;
+
             // predict new values
 
             gtsam::NavState predicted_state = preintegrated_imu_->predict(gtsam::NavState(current_pose_, current_velocity_), current_bias_);
@@ -242,22 +284,24 @@ namespace radar
             new_values_.insert(V(curr_idx), predicted_state.velocity());
             new_values_.insert(B(curr_idx), current_bias_);
 
-            // update ISAM2
-            attemptOptimization();
-            
-            new_factors_.resize(0);
-            new_values_.clear();
+            update_counter_++;
+            if (update_counter_ >= config_.isam2_relinearize_skip)
+            {
+                // update ISAM2
+                attemptOptimization();
 
-            // update current states
-            gtsam::Values result = isam2_.calculateEstimate();
-            current_pose_ = result.at<gtsam::Pose3>(X(curr_idx));
-            current_velocity_ = result.at<gtsam::Vector3>(V(curr_idx));
-            current_bias_ = result.at<gtsam::imuBias::ConstantBias>(B(curr_idx));
+                // update current states
+                gtsam::Values result = isam2_.calculateEstimate();
+                current_pose_ = result.at<gtsam::Pose3>(X(curr_idx));
+                current_velocity_ = result.at<gtsam::Vector3>(V(curr_idx));
+                current_bias_ = result.at<gtsam::imuBias::ConstantBias>(B(curr_idx));
+
+                // Reset
+                preintegrated_imu_->resetIntegrationAndSetBias(current_bias_);
+                update_counter_ = 0;
+
+            }
             current_timestamp_ = frame.timestamp;
-            
-            // Reset IMU integrator
-            preintegrated_imu_->resetIntegrationAndSetBias(current_bias_);         
-
         }
 
         void GraphOptimizer::saveFullTrajectory(const std::string& filename)

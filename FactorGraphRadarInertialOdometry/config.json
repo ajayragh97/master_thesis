@@ -43,13 +43,22 @@
         "use_2d_mode": false,
         "gravity": 9.81,
         "keyframe_rate": 50.0,
-        "gt_skip_rate": 1,
+        "gt_skip_rate": 100,
         "update_rate": 10,
         "noise": {
-            "accel_sigma": 10,
-            "gyro_sigma": 10,
-            "accel_bias_rw_sigma": 1.0e-2,
-            "gyro_bias_rw_sigma": 1.0e-3
+            "accel_sigma": 1.0e-2,
+            "gyro_sigma": 1.0e-2,
+            "accel_bias_rw_sigma_x": 1.0e-2,
+            "accel_bias_rw_sigma_y": 1.0e-2,
+            "accel_bias_rw_sigma_z": 1.0e-2,
+            "gyro_bias_rw_sigma_x": 1.0e-3,
+            "gyro_bias_rw_sigma_y": 1.0e-3,
+            "gyro_bias_rw_sigma_z": 1.0e-3,
+            "gt_sigma_position" : 0.001,
+            "gt_sigma_orientation" : 0.002,
+            "preinegration_sig_x" : 1e-8,
+            "preinegration_sig_y" : 1e-8,
+            "preinegration_sig_z" : 1e-8
         },
         "sigma": {
             "prior_position": 0.001,
