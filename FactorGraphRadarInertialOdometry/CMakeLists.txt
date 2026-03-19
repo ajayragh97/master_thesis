@@ -4,6 +4,10 @@ project(FactorGraphRadarInertialOdometry)
 if(DEFINED ENV{CONDA_PREFIX})
     message(STATUS "Conda environment detected at: $ENV{CONDA_PREFIX}")
     list(APPEND CMAKE_PREFIX_PATH "$ENV{CONDA_PREFIX}")
+
+    link_directories("$ENV{CONDA_PREFIX}/lib")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,$ENV{CONDA_PREFIX}/lib")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-rpath,$ENV{CONDA_PREFIX}/lib")
 endif()
 
 set(CMAKE_CXX_STANDARD 17)

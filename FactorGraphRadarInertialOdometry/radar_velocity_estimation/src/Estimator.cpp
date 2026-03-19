@@ -119,7 +119,11 @@ namespace radar
             // covariance estimation
             Eigen::VectorXd residuals = y - H * res.linear_velocity;
             double mse = residuals.squaredNorm() / std::max(1, (n - 3));
-            res.covariance = (H.transpose() * H).inverse() * mse;
+            //  Dampen H^T * H to prevent singularity (NaNs / negative eigenvalues) when radar points are highly coplanar or collinear.
+            Eigen::Matrix3d HtH = H.transpose() * H;
+            HtH += Eigen::Matrix3d::Identity() * 1e-5;
+            res.covariance = HtH.inverse() * mse;
+            
             // Adding a noise floor to covariance to prevent overconfidence in very low noise scenarios
             res.covariance += Eigen::Matrix3d::Identity() * config_.covariance_noise_floor;
             res.inlier_ratio = ((n * 1.0) / scan.size()) * 100;

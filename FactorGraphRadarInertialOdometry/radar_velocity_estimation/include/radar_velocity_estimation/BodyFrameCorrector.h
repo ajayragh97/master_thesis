@@ -48,7 +48,7 @@ namespace radar
                 @param double: Timestamp of the estimated velocity (radar scan timestamp)
                 @return Eigen::Vector3d Velocity in Base Frame
                 */
-                Eigen::Vector3d correctVelocity(const Eigen::Vector3d& radar_velocity, double timestamp);
+                void correctVelocity(radar::common::VelocityEstimate& radar_vel, double timestamp);
                 
                 Eigen::Matrix4d getRadarToBaseTransform() const;
             private:

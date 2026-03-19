@@ -28,7 +28,7 @@ int main(int argc, char** argv)
     SystemConfig cfg = SystemConfig::load(config_path);
 
     int GT_SKIP_RATE = cfg.graph.gt_skip_rate;
-
+    std::cout << "GT skip rate: " << GT_SKIP_RATE << std::endl;
     std::string base_dir = cfg.dataset.base_dir;
     std::string data_dir = base_dir + cfg.dataset.sensor + "/pointclouds/data/";
     std::string radar_stamp_path = base_dir + cfg.dataset.sensor + "/pointclouds/timestamps.txt";
@@ -126,7 +126,7 @@ int main(int argc, char** argv)
                     if (vel_est.success) 
                     {
                         frame.reve_velocity_body = vel_est;
-                        frame.reve_velocity_body.linear_velocity = corrector.correctVelocity(vel_est.linear_velocity, current_time);
+                        corrector.correctVelocity(frame.reve_velocity_body, current_time);
                         frame.has_reve_velocity = true;
                         static_cloud = filterDynamicPoints(raw_cloud, vel_est.linear_velocity, cfg.icp.dynamic_point_vel_thresh);
                     }
@@ -160,6 +160,12 @@ int main(int argc, char** argv)
     std::cout << "--- Starting Optimization ---" << std::endl;
     GraphOptimizer optimizer(cfg.graph);
     optimizer.initialize(init_pose, init_velocity, init_bias, synced_frames[0].timestamp, estimated_gravity, imu_bias);
+    std::cout << "Init IMu readings: "  << synced_frames[0].imu_measurements[0].linear_acceleration.x() << "," 
+                                        << synced_frames[0].imu_measurements[0].linear_acceleration.y() << ","
+                                        << synced_frames[0].imu_measurements[0].linear_acceleration.z() << ","
+                                        << synced_frames[0].imu_measurements[0].angular_velocity.x() << ","
+                                        << synced_frames[0].imu_measurements[0].angular_velocity.y() << ","
+                                        << synced_frames[0].imu_measurements[0].angular_velocity.z() << std::endl;
 
     for (size_t i = 1; i < synced_frames.size(); ++i) 
     {

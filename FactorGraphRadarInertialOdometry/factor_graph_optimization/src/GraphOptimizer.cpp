@@ -46,13 +46,21 @@ namespace radar
             // setup preintegrator with estimated gravity
             auto imu_params = gtsam::PreintegrationParams::MakeSharedU(estimated_gravity);
             gtsam::Point3 t(config_.T_base_imu.translation);
-            gtsam::Rot3 R(gtsam::Rot3::Roll(M_PI));
+            gtsam::Rot3 R(gtsam::Rot3(config_.T_base_imu.rotation));
             imu_params->setBodyPSensor(gtsam::Pose3(R, t));
 
             // loading IMU covariance
             if (imu_bias.std_acc != Eigen::Vector3d::Zero())
             {
                 std::cout << "seting preintegrator covariances" << std::endl;
+                std::cout << "Covariances: \nstd_acc: " << 
+                            imu_bias.std_acc.x() << "," 
+                            << imu_bias.std_acc.y() << ","
+                            << imu_bias.std_acc.z() << "\n"
+                            << "std_gyro: "
+                            << imu_bias.std_gyro.x() << ","
+                            << imu_bias.std_gyro.y() << ","
+                            << imu_bias.std_gyro.z() << std::endl;
                 // Covariance Matrix Accelerometer
                 Eigen::DiagonalMatrix<double, 3> cov_acc(pow(imu_bias.std_acc.x(), 2),
                                                          pow(imu_bias.std_acc.y(), 2), 
@@ -64,9 +72,9 @@ namespace radar
                                                          pow(imu_bias.std_gyro.z(), 2));
 
                 // Covariance Matrix Integration
-                Eigen::DiagonalMatrix<double, 3> cov_integration(pow(config_.preinegration_sig_x, 2),
-                                                         pow(config_.preinegration_sig_y, 2), 
-                                                         pow(config_.preinegration_sig_z, 2));
+                Eigen::DiagonalMatrix<double, 3> cov_integration(config_.preinegration_sig_x,
+                                                                config_.preinegration_sig_y, 
+                                                                config_.preinegration_sig_z);
                 
                 imu_params->setAccelerometerCovariance(cov_acc);
                 imu_params->setGyroscopeCovariance(cov_gyro);
@@ -129,31 +137,10 @@ namespace radar
             // Clear timestamp history and add initial timestamp
             timestamp_history_.clear();
             timestamp_history_.push_back(initial_timestamp);
-
-            // update bias standard deviations (sigma) after init
-            // config_.accel_bias_rw_sigma_x = imu_bias.std_acc.x();
-            // config_.accel_bias_rw_sigma_y = imu_bias.std_acc.y();
-            // config_.accel_bias_rw_sigma_z = imu_bias.std_acc.z();
-
-            // config_.gyro_bias_rw_sigma_x = imu_bias.std_gyro.x();
-            // config_.gyro_bias_rw_sigma_y = imu_bias.std_gyro.y();
-            // config_.gyro_bias_rw_sigma_z = imu_bias.std_gyro.z();
         }
 
         void GraphOptimizer::addFrame(const radar::common::OptimizationFrame& frame)
         {
-
-            // ==============================================================
-            // SAFETY CHECK: Do not increment index if data is invalid
-            // ==============================================================
-            if (frame.imu_measurements.empty() && current_node_idx_ > 0) 
-            {
-                std::cerr << "WARNING: Empty IMU frame! Integrating blind gap to preserve graph chain." << std::endl;
-                // We integrate 'zero' movement over the time gap to prevent GTSAM from crashing
-                preintegrated_imu_->integrateMeasurement(
-                    gtsam::Vector3::Zero(), gtsam::Vector3::Zero(), frame.timestamp - current_timestamp_);
-            }
-
 
             // Ensure strictly positive time diff for random walk to prevent zero-sigma Information Matrix crashes
             double dt_frame = std::max(frame.timestamp - current_timestamp_, 1e-5);
@@ -241,16 +228,15 @@ namespace radar
                 double icp_std = std::max(sqrt(frame.icp_fitness), 0.01);
                 auto icp_noise = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(6) <<0.1, // roll (rad)(radar icp cant be fully trusted)
                                                                                         0.1, // pitch (rad)
-                                                                                        icp_std *2, // yaw (rad)
+                                                                                        icp_std, // yaw (rad)
                                                                                         icp_std, // x(m)
                                                                                         icp_std, // y(m)
-                                                                                        0.1).finished()); // z(m) variance in z is high
-                                
+                                                                                        icp_std).finished()); // z(m) 
                 new_factors_.add(gtsam::BetweenFactor<gtsam::Pose3>(X(last_radar_pose_key_), X(curr_idx), relative_icp_pose, icp_noise));
             }
 
             // if in 2d mode
-            if (use_2d_mode_)
+            if (config_.use_2d_mode)
             {
                 // adding delta yaw factor
                 if (frame.has_delta_yaw)
@@ -292,7 +278,7 @@ namespace radar
             preintegrated_imu_->resetIntegrationAndSetBias(current_bias_);
 
             // ===================================
-            // ISAM2 Batch optimization
+            // ISAM2 optimization
             // ===================================
             update_counter_++;
             if (update_counter_ >= config_.isam2_relinearize_skip)
@@ -309,6 +295,9 @@ namespace radar
                 preintegrated_imu_->resetIntegrationAndSetBias(current_bias_);
                 update_counter_ = 0;
             }
+            
+
+            
 
             current_timestamp_ = frame.timestamp;
         }

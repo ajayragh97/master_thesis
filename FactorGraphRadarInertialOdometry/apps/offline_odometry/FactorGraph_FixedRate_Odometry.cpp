@@ -278,8 +278,8 @@ int main(int argc, char** argv)
         // Populate REVE velocity if available
         if (vel_estimate_sensor.success)
         {
-            Eigen::Vector3d vel_estimate_body = corrector.correctVelocity(vel_estimate_sensor.linear_velocity, current_radar_time);
-            radar_frame.reve_velocity_body.linear_velocity = vel_estimate_body;
+            corrector.correctVelocity(vel_estimate_sensor, current_radar_time);
+            radar_frame.reve_velocity_body.linear_velocity = vel_estimate_sensor.linear_velocity;
             radar_frame.reve_velocity_body.inlier_ratio = vel_estimate_sensor.inlier_ratio;
             radar_frame.reve_velocity_body.covariance = vel_estimate_sensor.covariance;
             radar_frame.has_reve_velocity = true;

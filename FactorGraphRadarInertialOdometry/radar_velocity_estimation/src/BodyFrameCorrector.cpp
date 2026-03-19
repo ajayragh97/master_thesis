@@ -116,7 +116,7 @@ namespace radar
             return w0 + (w1 - w0) * ratio;
         }
 
-        Eigen::Vector3d BodyFrameCorrector::correctVelocity(const Eigen::Vector3d& radar_vel, double timestamp)
+        void BodyFrameCorrector::correctVelocity(radar::common::VelocityEstimate& radar_vel, double timestamp)
         {
             // get angular velocity at timestamp
             Eigen::Vector3d w_imu = getInterpolatedOmega(timestamp);
@@ -127,7 +127,7 @@ namespace radar
 
             // Rotate radar linear velocity to base frame
             // V_radar_aligned = R_base_radar * V_radar
-            Eigen::Vector3d v_radar_aligned = T_base_radar.rotation * radar_vel;
+            Eigen::Vector3d v_radar_aligned = T_base_radar.rotation * radar_vel.linear_velocity;
 
             // calculate tangential velocity from lever arm effect
             // lever_arm = translation from base to radar
@@ -136,7 +136,12 @@ namespace radar
             Eigen::Vector3d v_tangential = w_base.cross(lever_arm);
 
             // final correaction: v_base = v_radar - v_tangential
-            return v_radar_aligned - v_tangential;
+            radar_vel.linear_velocity =  v_radar_aligned - v_tangential;
+
+            // Rotate covariance matrix to account for body frame rotation 
+            // Floating point math asymmetry crashes GTSAM's Cholesky decomposition.
+            radar_vel.covariance = T_base_radar.rotation.toRotationMatrix() * radar_vel.covariance * T_base_radar.rotation.toRotationMatrix().transpose();
+            radar_vel.covariance = 0.5 * (radar_vel.covariance + radar_vel.covariance.transpose());
         }
     }
 }

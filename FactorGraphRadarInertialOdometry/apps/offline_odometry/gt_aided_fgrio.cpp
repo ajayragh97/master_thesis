@@ -102,6 +102,7 @@ int main(int argc, char** argv)
     // Dynamic configuration variables
     int GT_SKIP_RATE = cfg.graph.gt_skip_rate; // 1 = use every frame, 50 = use 1 GT pose per 50 frames
     int ISAM2_UPDATE_RATE = cfg.graph.update_rate; // Batch optimize every 10 frames
+    std::cout << "GT skip rate: " << GT_SKIP_RATE << std::endl;
 
     // Paths
     std::string base_dir = cfg.dataset.base_dir;
@@ -190,7 +191,7 @@ int main(int argc, char** argv)
 
                     if (vel_est.success) {
                         frame.reve_velocity_body = vel_est;
-                        frame.reve_velocity_body.linear_velocity = corrector.correctVelocity(vel_est.linear_velocity, current_time);
+                        corrector.correctVelocity(frame.reve_velocity_body, current_time);
                         frame.has_reve_velocity = true;
                         static_cloud = filterDynamicPoints(raw_cloud, vel_est.linear_velocity, cfg.icp.dynamic_point_vel_thresh);
                     }
@@ -245,8 +246,8 @@ int main(int argc, char** argv)
     imu_params->setGyroscopeCovariance(gtsam::Matrix33::Identity() * std::pow(cfg.graph.gyro_noise_sigma, 2));
     imu_params->setIntegrationCovariance(gtsam::Matrix33::Identity() * 1e-8);
 
-    gtsam::Rot3 imu_rotation = gtsam::Rot3::Roll(M_PI); 
-    gtsam::Point3 imu_translation(t_imu.translation); // Keep the physical lever-arm
+    gtsam::Rot3 imu_rotation(gtsam::Rot3(t_imu.rotation)); 
+    gtsam::Point3 imu_translation(t_imu.translation); 
     imu_params->setBodyPSensor(gtsam::Pose3(imu_rotation, imu_translation));
     
     // Initial Bias (Use static calculation if you have it, else Zero)

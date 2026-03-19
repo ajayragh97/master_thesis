@@ -188,20 +188,20 @@ int main()
         if (res.success)
         {
             // 2. CORRECT (Body Frame)
-            Eigen::Vector3d v_body = corrector.correctVelocity(res.linear_velocity, timestamps[i]);
+            corrector.correctVelocity(res, timestamps[i]);
 
             std::cout << std::setw(8) << i << " | " 
                       << std::setw(15) << timestamps[i] << " | " 
-                      << std::setw(6) << v_body.x() << ", " 
-                      << std::setw(6) << v_body.y() << ", " 
-                      << std::setw(6) << v_body.z() << " | "
+                      << std::setw(6) << res.linear_velocity.x() << ", " 
+                      << std::setw(6) << res.linear_velocity.y() << ", " 
+                      << std::setw(6) << res.linear_velocity.z() << " | "
                       << std::setw(8) << res.inlier_ratio  << "%" << std::endl;
 
             outFile << std::fixed << std::setprecision(6) 
                     << timestamps[i] << " "
-                    << v_body.x() << " "
-                    << v_body.y() << " "
-                    << v_body.z() << "\n";
+                    << res.linear_velocity.x() << " "
+                    << res.linear_velocity.y() << " "
+                    << res.linear_velocity.z() << "\n";
         }
         else
         {
