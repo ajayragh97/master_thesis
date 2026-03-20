@@ -226,8 +226,8 @@ namespace radar
 
                 // standard deviation  = sqrt(MSE), adding a floor to prevent overconfidence
                 double icp_std = std::max(sqrt(frame.icp_fitness), 0.01);
-                auto icp_noise = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(6) <<0.1, // roll (rad)(radar icp cant be fully trusted)
-                                                                                        0.1, // pitch (rad)
+                auto icp_noise = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(6) <<icp_std, // roll (rad)(radar icp cant be fully trusted)
+                                                                                        icp_std, // pitch (rad)
                                                                                         icp_std, // yaw (rad)
                                                                                         icp_std, // x(m)
                                                                                         icp_std, // y(m)

@@ -6,8 +6,8 @@ import os
 # ==========================================
 # Configuration / File Paths
 # ==========================================
-ESTIMATED_TRAJ_FILE = '/home/ajay/work/temp/aspen_run7/reve/gt_aided_odometry_final_traj.txt'
-GT_POSES_FILE       = '/home/ajay/work/temp/aspen_run7/groundtruth/groundtruth_poses.txt'
+ESTIMATED_TRAJ_FILE = '/media/ajay/Backup_Plus1/datasets/coloradar/kitti/2_28_2021_outdoors_run7/reve/gt_aided_odometry_final_traj.txt'
+GT_POSES_FILE       = '/media/ajay/Backup_Plus1/datasets/coloradar/kitti/2_28_2021_outdoors_run7/groundtruth/groundtruth_poses.txt'
 
 def plot_3d_covariance_ellipsoid(ax, pos, cov_matrix, n_std=3.0, **kwargs):
     """

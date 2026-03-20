@@ -75,7 +75,7 @@ namespace radar
                 count++;
             }
 
-            std::cout << "Loaded " << count << "IMU Measurements" << std::endl;
+            std::cout << "Loaded " << count << " IMU Measurements" << std::endl;
             return count > 0;
         }
 

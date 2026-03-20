@@ -1,6 +1,6 @@
 {
     "dataset": {
-        "base_dir": "/home/ajay/work/temp/aspen_run7/",
+        "base_dir": "/media/ajay/Backup_Plus1/datasets/coloradar/kitti/2_28_2021_outdoors_run7/",
         "calib_dir": "calib",
         "output_filename": "reve/gt_aided_odometry",
         "static_duration": 0.1,
@@ -43,7 +43,7 @@
         "use_2d_mode": false,
         "gravity": 9.81,
         "keyframe_rate": 50.0,
-        "gt_skip_rate": 5380,
+        "gt_skip_rate": 100,
         "update_rate": 10,
         "noise": {
             "accel_sigma": 1.0e-2,
