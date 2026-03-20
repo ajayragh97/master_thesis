@@ -125,3 +125,14 @@ This project utilizes the following open-source libraries:
 *   **evo:** For Python-based trajectory evaluation. [GitHub](https://github.com/MichaelGrupp/evo)
 *   **Nanoflann:** For efficient Nearest Neighbor searches required by the Radar ICP module. [GitHub](https://github.com/jlblancoc/nanoflann)
 
+### Research papers
+#### REVE
+~~~[bibtex]
+@INPROCEEDINGS{DoerMFI2020, 
+  author={Doer, Christopher and Trommer, Gert F.},
+  booktitle={2020 IEEE International Conference on Multisensor Fusion and Integration for Intelligent Systems (MFI)}, 
+  title={An EKF Based Approach to Radar Inertial Odometry}, 
+  year={2020},
+  pages={152-159},
+  doi={10.1109/MFI49285.2020.9235254}}
+~~~
