@@ -89,12 +89,14 @@ To replicate the ablation study and generate the `ablation_summary.csv`:
 cd eval_scripts
 python3 automate_trajectory_evaluation.py
 ```
+**Note:** The dataset base directory has to be setup un the config.json file.
 
 ### 2. Generate Drift Leaderboard
 To calculate the KITTI-style drift percentages using `evo`:
 ```bash
 python3 automate_evo_evaluation.py
 ```
+**None:** Change the dataset directory within the python script.
 
 ---
 
