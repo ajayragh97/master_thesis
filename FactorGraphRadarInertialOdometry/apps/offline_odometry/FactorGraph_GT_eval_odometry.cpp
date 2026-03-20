@@ -28,7 +28,6 @@ int main(int argc, char** argv)
     SystemConfig cfg = SystemConfig::load(config_path);
 
     int GT_SKIP_RATE = cfg.graph.gt_skip_rate;
-    std::cout << "GT skip rate: " << GT_SKIP_RATE << std::endl;
     std::string base_dir = cfg.dataset.base_dir;
     std::string data_dir = base_dir + cfg.dataset.sensor + "/pointclouds/data/";
     std::string radar_stamp_path = base_dir + cfg.dataset.sensor + "/pointclouds/timestamps.txt";
@@ -41,6 +40,14 @@ int main(int argc, char** argv)
     std::vector<ImuData> all_imu_data = loadImuDataVector(imu_data_path, imu_stamp_path);
     std::vector<GTData> gt_data = loadGroundTruth(gt_pose_path, gt_stamp_path);
 
+    std::cout   << "<==================================================================>"
+                <<"\n\tFactor graph radar inertial odometry"
+                <<"\n\tRadar Ego velocity Factor:  " << cfg.graph.use_reve_factor
+                <<"\n\tRadar ICP factor: " << cfg.graph.use_icp_factor
+                <<"\n\tGPS or Groundtruth Prior: " << cfg.graph.use_gt_prior
+                <<"\n\tGroundtruth skip rate: " << GT_SKIP_RATE
+                << "\n<==================================================================>"
+                << std::endl;
     BodyFrameCorrector corrector;
     Transform t_radar, t_imu; 
     corrector.loadTransform(cfg.tf_radar_path, t_radar);
@@ -173,7 +180,7 @@ int main(int argc, char** argv)
         if (i % 100 == 0) std::cout << "Optimized Frame " << i << " / " << synced_frames.size() << "\r" << std::flush;
     }
 
-    std::string out_path = base_dir + cfg.dataset.output_filename + "_final_traj.txt";
+    std::string out_path = base_dir + cfg.dataset.output_filename + ".txt";
     optimizer.saveFullTrajectory(out_path);
     return 0;
 }

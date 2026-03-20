@@ -15,6 +15,9 @@ namespace radar
 
         struct GraphConfig
         {
+            bool use_reve_factor = true;
+            bool use_icp_factor = true;
+            bool use_gt_prior = true;
             bool use_2d_mode = false;
             bool gravity = 9.81;
 
@@ -131,6 +134,9 @@ namespace radar
                 cfg.icp.start_qw = config_json["icp"]["start_qw"];
 
                 // Graph config
+                cfg.graph.use_reve_factor = config_json["graph"]["use_reve_factor"];
+                cfg.graph.use_icp_factor = config_json["graph"]["use_icp_factor"];
+                cfg.graph.use_gt_prior = config_json["graph"]["use_gt_prior"];
                 cfg.graph.use_2d_mode = config_json["graph"]["use_2d_mode"];
                 cfg.graph.gravity = config_json["graph"].value("gravity", 9.81);
                 cfg.graph.accel_noise_sigma = config_json["graph"]["noise"]["accel_sigma"];

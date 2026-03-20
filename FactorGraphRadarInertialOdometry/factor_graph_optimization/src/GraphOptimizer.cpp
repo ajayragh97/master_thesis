@@ -198,7 +198,7 @@ namespace radar
             // =====================================
 
             // Ground truth "GPS" prior
-            if (frame.has_gt_pose)
+            if (frame.has_gt_pose && config_.use_gt_prior)
             {
                 // Note gtsam by default uses rotation first then translation
                 auto gt_meas_sigma = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(6) <<   config_.gt_sigma_orientation,
@@ -211,14 +211,14 @@ namespace radar
             }
 
             // adding velocity factor to new_factors_
-            if (frame.has_reve_velocity)
+            if (frame.has_reve_velocity && config_.use_reve_factor)
             {
                 auto velocity_covariance = gtsam::noiseModel::Gaussian::Covariance(frame.reve_velocity_body.covariance);                                 
                 new_factors_.add(RadarVelocityFactor(X(curr_idx), V(curr_idx), frame.reve_velocity_body.linear_velocity, velocity_covariance));
             }
             
             // Radar ICP transform factor
-            if (frame.has_icp && last_radar_pose_key_ != 0)
+            if (frame.has_icp && last_radar_pose_key_ != 0 && config_.use_icp_factor)
             {
                 gtsam::Rot3 icp_rot(frame.T_body.block<3,3>(0,0));
                 gtsam::Point3 icp_trans(frame.T_body(0,3), frame.T_body(1,3), frame.T_body(2, 3));

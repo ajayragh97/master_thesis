@@ -1,137 +1,94 @@
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.spatial.transform import Rotation as R
 import os
+import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+# --- Force an interactive backend if possible ---
+# If you are on Linux, 'TkAgg' or 'Qt5Agg' are usually best.
+# If this causes an error, comment out the line below.
+matplotlib.use('TkAgg') 
 
 # ==========================================
-# Configuration / File Paths
+# CONFIGURATION
 # ==========================================
-ESTIMATED_TRAJ_FILE = '/media/ajay/Backup_Plus1/datasets/coloradar/kitti/2_28_2021_outdoors_run7/reve/gt_aided_odometry_final_traj.txt'
-GT_POSES_FILE       = '/media/ajay/Backup_Plus1/datasets/coloradar/kitti/2_28_2021_outdoors_run7/groundtruth/groundtruth_poses.txt'
+BASE_DIR = '/home/ajay/work/temp/aspen_run7/'
+RESULTS_DIR = os.path.join(BASE_DIR, 'results')
+GT_TUM_FILE = os.path.join(BASE_DIR, 'groundtruth/gt_tum.txt')
 
-def plot_3d_covariance_ellipsoid(ax, pos, cov_matrix, n_std=3.0, **kwargs):
-    """
-    Generates and plots a 3D error ellipsoid.
-    n_std = 3.0 represents ~99% confidence interval.
-    """
-    # 1. Generate a unit sphere
-    u = np.linspace(0, 2 * np.pi, 20)
-    v = np.linspace(0, np.pi, 20)
-    x = np.outer(np.cos(u), np.sin(v))
-    y = np.outer(np.sin(u), np.sin(v))
-    z = np.outer(np.ones_like(u), np.cos(v))
-    
-    # Pack into a 3xN array
-    sphere_points = np.vstack((x.flatten(), y.flatten(), z.flatten()))
+def set_axes_equal(ax):
+    """Make axes of 3D plot have equal scale."""
+    x_limits = ax.get_xlim3d()
+    y_limits = ax.get_ylim3d()
+    z_limits = ax.get_zlim3d()
+    x_range = abs(x_limits[1] - x_limits[0])
+    y_range = abs(y_limits[1] - y_limits[0])
+    z_range = abs(z_limits[1] - z_limits[0])
+    x_middle = np.mean(x_limits)
+    y_middle = np.mean(y_limits)
+    z_middle = np.mean(z_limits)
+    plot_radius = 0.5 * max([x_range, y_range, z_range])
+    ax.set_xlim3d([x_middle - plot_radius, x_middle + plot_radius])
+    ax.set_ylim3d([y_middle - plot_radius, y_middle + plot_radius])
+    ax.set_zlim3d([z_middle - plot_radius, z_middle + plot_radius])
 
-    # 2. Eigen decomposition to get rotation and scaling
-    eigenvalues, eigenvectors = np.linalg.eigh(cov_matrix)
-    
-    # Prevent numerical issues with tiny negative eigenvalues
-    eigenvalues = np.abs(eigenvalues) 
-    
-    # Scale by the standard deviation and eigenvalues
-    radii = n_std * np.sqrt(eigenvalues)
-    
-    # Transform: Scale then Rotate
-    transformation = eigenvectors @ np.diag(radii)
-    ellipsoid_points = transformation @ sphere_points
-
-    # 3. Translate to the vehicle's position
-    x_ell = ellipsoid_points[0, :].reshape(x.shape) + pos[0]
-    y_ell = ellipsoid_points[1, :].reshape(y.shape) + pos[1]
-    z_ell = ellipsoid_points[2, :].reshape(z.shape) + pos[2]
-
-    # Plot the surface
-    ax.plot_surface(x_ell, y_ell, z_ell, **kwargs)
-
-def main():
-    # 1. Load Estimated Data
-    print("Loading Estimate Data...")
-    if not os.path.exists(ESTIMATED_TRAJ_FILE):
-        print(f"File not found: {ESTIMATED_TRAJ_FILE}")
+def plot_scenarios_interactive():
+    if not os.path.exists(GT_TUM_FILE):
+        print(f"Error: GT file not found.")
         return
+    gt_data = np.loadtxt(GT_TUM_FILE)
+    gt_x, gt_y, gt_z = gt_data[:, 1], gt_data[:, 2], gt_data[:, 3]
 
-    est_data = np.loadtxt(ESTIMATED_TRAJ_FILE)
+    scenarios = [d for d in os.listdir(RESULTS_DIR) if os.path.isdir(os.path.join(RESULTS_DIR, d))]
     
-    t_est = est_data[:, 0]
-    x_est, y_est, z_est = est_data[:, 1], est_data[:, 2], est_data[:, 3]
-    q_est = est_data[:, 4:8] # qx, qy, qz, qw
-    
-    # Extract 3x3 Translation Covariance 
-    c_xx, c_xy, c_xz = est_data[:, 8], est_data[:, 9], est_data[:, 10]
-    c_yy, c_yz, c_zz = est_data[:, 11], est_data[:, 12], est_data[:, 13]
-
-    # Calculate Forward Vectors (assuming robot forward is local +X axis)
-    rot_est = R.from_quat(q_est)
-    forward_vectors = rot_est.apply([1.0, 0.0, 0.0]) # Rotate the unit X vector
-    u_est, v_est, w_est = forward_vectors[:, 0], forward_vectors[:, 1], forward_vectors[:, 2]
-
-    # 2. Load Ground Truth
-    print("Loading Ground Truth...")
-    gt_data = np.loadtxt(GT_POSES_FILE)
-    x_gt, y_gt, z_gt = gt_data[:, 0], gt_data[:, 1], gt_data[:, 2]
-    
-    # ==========================================
-    # PLOTTING
-    # ==========================================
-    fig = plt.figure(figsize=(14, 10))
-    ax = fig.add_subplot(111, projection='3d')
-
-    # Plot Ground Truth Path
-    ax.plot(x_gt, y_gt, z_gt, color='gray', linestyle='--', linewidth=2.5, label='Ground Truth')
-    
-    # Plot Estimated Path
-    ax.plot(x_est, y_est, z_est, color='blue', linestyle='-', linewidth=2, label='Factor Graph Estimate')
-
-    print("Generating 3D Covariance Ellipsoids and Quivers...")
-    # Plot Covariance Ellipsoids and Orientation Arrows
-    # Step to prevent the plot from becoming a solid red block
-    STEP = 1000 
-    
-    for i in range(0, len(t_est), STEP):
-        # Build the 3x3 covariance matrix
-        cov3d = np.array([
-            [c_xx[i], c_xy[i], c_xz[i]],
-            [c_xy[i], c_yy[i], c_yz[i]],
-            [c_xz[i], c_yz[i], c_zz[i]]
-        ])
+    for scen in scenarios:
+        print(f"\nDisplaying Scenario: {scen}")
+        print("Close the plot window to save and move to the next scenario.")
         
-        pos3d = np.array([x_est[i], y_est[i], z_est[i]])
+        scen_path = os.path.join(RESULTS_DIR, scen)
+        files = [f for f in os.listdir(scen_path) if f.startswith('skip_') and f.endswith('.txt') and 'temp' not in f]
         
-        # Draw 3-Sigma Error Ellipsoid (~99% confidence)
-        plot_3d_covariance_ellipsoid(ax, pos3d, cov3d, n_std=3.0, 
-                                     color='red', alpha=0.15, edgecolor='none')
+        def sort_key(val):
+            rate = val.replace('skip_', '').replace('.txt', '')
+            return 999999 if rate == 'blind' else int(rate)
+        files.sort(key=sort_key)
+
+        fig = plt.figure(figsize=(12, 9))
+        ax = fig.add_subplot(111, projection='3d')
         
-        # Draw 3D Orientation Arrow (Quiver)
-        # Length is scaled to make the arrow visible
-        ax.quiver(x_est[i], y_est[i], z_est[i], 
-                  u_est[i], v_est[i], w_est[i], 
-                  color='black', length=0.5, normalize=True, alpha=0.8)
+        # Plot GT
+        ax.plot(gt_x, gt_y, gt_z, color='gray', linestyle='--', linewidth=2, alpha=0.5, label='Ground Truth')
+        ax.scatter(gt_x[0], gt_y[0], gt_z[0], color='green', marker='^', s=100, label='Start')
 
-    # Add marker for Start
-    ax.scatter(x_est[0], y_est[0], z_est[0], c='green', marker='^', s=200, zorder=5, label='Start')
+        color_map = plt.get_cmap('tab10') # Distinct colors
+        for i, f in enumerate(files):
+            full_path = os.path.join(scen_path, f)
+            rate_label = f.replace('.txt', '').replace('skip_', 'Skip: ')
+            try:
+                data = np.loadtxt(full_path)
+                if data.ndim == 1: data = data.reshape(1, -1)
+                est_x, est_y, est_z = data[:, 1], data[:, 2], data[:, 3]
+                
+                # Highlight Blind Mode
+                lw = 2.5 if 'blind' in f else 1.2
+                ls = '-.' if 'blind' in f else '-'
+                
+                ax.plot(est_x, est_y, est_z, label=rate_label, linewidth=lw, linestyle=ls)
+            except: continue
 
-    # Formatting
-    ax.set_title('3D Trajectory with 3-$\sigma$ Covariance & Orientation', fontsize=16)
-    ax.set_xlabel('X (meters)', labelpad=10)
-    ax.set_ylabel('Y (meters)', labelpad=10)
-    ax.set_zlabel('Z (meters)', labelpad=10)
-    ax.legend(loc='upper right')
-    
-    # Set equal aspect ratio for 3D plot (prevents distortion of spheres into ovals)
-    try:
-        # For newer matplotlib versions
-        ax.set_box_aspect([
-            np.ptp(ax.get_xlim()), 
-            np.ptp(ax.get_ylim()), 
-            np.ptp(ax.get_zlim())
-        ])
-    except AttributeError:
-        pass
+        ax.set_title(f'3D Comparison: {scen}', fontweight='bold')
+        ax.set_xlabel('X (m)'); ax.set_ylabel('Y (m)'); ax.set_zlabel('Z (m)')
+        ax.legend(loc='upper left', bbox_to_anchor=(1.05, 1))
+        set_axes_equal(ax)
+        
+        # --- KEY CHANGE: SHOW THEN SAVE ---
+        # plt.show() blocks the script until you close the window
+        plt.show() 
+        
+        # Save the current view (if you rotated it, this saves the last view you saw!)
+        save_path = os.path.join(RESULTS_DIR, f"{scen}_3d_comparison.png")
+        fig.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"Saved: {save_path}")
 
-    plt.tight_layout()
-    plt.show()
-
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    plot_scenarios_interactive()
