@@ -1,3 +1,4 @@
+```markdown
 # Factor Graph Radar-Inertial Odometry (FG-RIO)
 
 A robust, multi-sensor fusion pipeline for 4D Radar and IMU odometry using Factor Graph Optimization. This project estimates 6-DoF vehicle states by fusing Doppler-derived ego-velocity, radar intensity weighted scan matching (ICP), and IMU preintegration.
@@ -12,8 +13,9 @@ A robust, multi-sensor fusion pipeline for 4D Radar and IMU odometry using Facto
 
 ---
 
-## Architecture
+## 🏗️ Architecture
 
+```mermaid
 graph TD
     %% Styling definitions
     classDef sensor fill:#e3f2fd,stroke:#1f77b4,stroke-width:2px,color:#000
@@ -69,7 +71,7 @@ graph TD
     ICP --->|Transform Matrix| Fac_ICP
     REVE --->|Linear Velocity| Fac_REVE
     SKIP -.->|If frame % skip_rate == 0| Fac_GT
-
+```
 
 ---
 
@@ -103,10 +105,6 @@ The table below shows the **Total 3D RMSE (meters)** for each configuration. As 
 
 ![Ablation Plot](results/ablation_plot.png)
 *Figure: Comparison of 3D Positional Error (RMSE) as the outage duration increases. REVE-based methods (Green/Blue) show significantly higher stability than geometric ICP (Purple) or Pure Inertial (Red) estimation.*
-
-***
-
-This structure makes the data much more readable because it follows the trend of the data rather than jumping between different metrics. It highlights the **RMSE** as the primary comparison point while using the **"Blind"** scenario as the ultimate test of the system's architecture.
 
 ### 2. Axis-Specific Analysis
 By analyzing the 6-DoF errors, we observe the fundamental physical constraints of the system:
@@ -150,33 +148,31 @@ To replicate the ablation study and generate the `ablation_summary.csv`:
 cd eval_scripts
 python3 automate_trajectory_evaluation.py
 ```
-**Note:** The dataset base directory has to be setup un the config.json file.
+**Note:** The dataset base directory has to be setup in the `config.json` file.
 
 ### 2. Generate Drift Leaderboard
 To calculate the KITTI-style drift percentages using `evo`:
 ```bash
+cd eval_scripts
 python3 automate_evo_evaluation.py
 ```
-**None:** Change the dataset directory within the python script.
+**Note:** Change the dataset directory within the python script.
 
 ---
 
 ## 📂 Project Structure
 ```text
-├── 3rdparty/               # 3rd party tool (Nanoflann) required for KD-Trees in ICP
-├── apps/               # Main entry point(run_gt_aided_odometry)
-├── factor_graph_optimization/       # GTSAM Factor implementations and GraphOptimizer
-├── radar_common/       # Data types and SystemConfig loader
-├── radar_velocity_estimation/     # REVE Doppler velocity estimator
-├── radar_registration/ # Radar-tuned ICP and KD-Tree
-├── eval_scripts/       # Python evaluation toolset (ATE, RPE, Plots)
-└── config.json         # Noise parameters and ablation toggles
+├── 3rdparty/                    # 3rd party tools (Nanoflann) required for KD-Trees in ICP
+├── apps/                        # Main entry point (run_gt_aided_odometry)
+├── factor_graph_optimization/   # GTSAM Factor implementations and GraphOptimizer
+├── radar_common/                # Data types and SystemConfig loader
+├── radar_velocity_estimation/   # REVE Doppler velocity estimator
+├── radar_registration/          # Radar-tuned ICP and KD-Tree
+├── eval_scripts/                # Python evaluation toolset (ATE, RPE, Plots)
+└── config.json                  # Noise parameters and ablation toggles
 ```
 
 ---
-Here is the final section to add to the bottom of your **README.md**. I have also included a standard "Acknowledgments" section which is common in robotics repos to give it a professional finish.
-
-***
 
 ## 📜 Acknowledgments & Citations
 
@@ -184,18 +180,22 @@ Here is the final section to add to the bottom of your **README.md**. I have als
 This project utilizes the following open-source libraries:
 *   **GTSAM:** For factor graph optimization and IMU preintegration. [GitHub](https://github.com/borglab/gtsam)
 *   **Eigen3:** For high-performance linear algebra. [Official Site](https://eigen.tuxfamily.org/)
-*   **nlohmann_json:** For modern JSON parsing in C++. [GitHub](https://github.com/nlohmann/json)
+*   **nlohmann_json:** For modern JSON parsing in C++.[GitHub](https://github.com/nlohmann/json)
 *   **evo:** For Python-based trajectory evaluation. [GitHub](https://github.com/MichaelGrupp/evo)
 *   **Nanoflann:** For efficient Nearest Neighbor searches required by the Radar ICP module. [GitHub](https://github.com/jlblancoc/nanoflann)
 
-### Research papers
+### Relevant Research Publications
 #### REVE
-~~~[bibtex]
+```bibtex
 @INPROCEEDINGS{DoerMFI2020, 
   author={Doer, Christopher and Trommer, Gert F.},
   booktitle={2020 IEEE International Conference on Multisensor Fusion and Integration for Intelligent Systems (MFI)}, 
   title={An EKF Based Approach to Radar Inertial Odometry}, 
   year={2020},
   pages={152-159},
-  doi={10.1109/MFI49285.2020.9235254}}
-~~~
+  doi={10.1109/MFI49285.2020.9235254}
+}
+```
+---
+*Developed for research in Radar-Inertial Fusion and GPS-denied Navigation.*
+```
