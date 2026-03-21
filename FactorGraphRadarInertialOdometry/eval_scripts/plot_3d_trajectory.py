@@ -12,7 +12,7 @@ matplotlib.use('TkAgg')
 # ==========================================
 # CONFIGURATION
 # ==========================================
-BASE_DIR = '/home/ajay/work/temp/aspen_run7/'
+BASE_DIR = '/media/ajay/Backup_Plus1/datasets/coloradar/kitti/2_28_2021_outdoors_run7/'
 RESULTS_DIR = os.path.join(BASE_DIR, 'results')
 GT_TUM_FILE = os.path.join(BASE_DIR, 'groundtruth/gt_tum.txt')
 

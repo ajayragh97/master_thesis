@@ -40,6 +40,9 @@ int main(int argc, char** argv)
     std::vector<ImuData> all_imu_data = loadImuDataVector(imu_data_path, imu_stamp_path);
     std::vector<GTData> gt_data = loadGroundTruth(gt_pose_path, gt_stamp_path);
 
+    std::string filtered_dir = base_dir + cfg.dataset.sensor + "/pointclouds/filtered_data/";
+    fs::create_directories(filtered_dir); 
+
     std::cout   << "<==================================================================>"
                 <<"\n\tFactor graph radar inertial odometry"
                 <<"\n\tRadar Ego velocity Factor:  " << cfg.graph.use_reve_factor
@@ -152,6 +155,14 @@ int main(int argc, char** argv)
                     }
                     prev_cloud = static_cloud;
                     last_radar_time = current_time;
+
+                    // save the filtered pointcloud
+                    std::string out_bin = filtered_dir + "filtered_pointcloud_" + std::to_string(r_idx) + ".bin";
+                    if (!fs::exists(out_bin))
+                    {
+                        savePointCloud(out_bin, static_cloud);
+                    }
+                    
                 }
             }
         }

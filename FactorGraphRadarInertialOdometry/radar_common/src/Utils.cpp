@@ -62,6 +62,28 @@ namespace radar
             return static_cloud;
         }
 
+        void savePointCloud(const std::string& filename, const PointCloud& cloud) 
+        {
+            std::ofstream file(filename, std::ios::binary);
+            if (!file.is_open()) {
+                std::cerr << "Failed to open file for writing: " << filename << std::endl;
+                return;
+            }
+            
+            for (const auto& p : cloud) {
+                // Pack into the 5-float format: x, y, z, snr, doppler
+                float data[5] = { 
+                    static_cast<float>(p.position_cart.x()), 
+                    static_cast<float>(p.position_cart.y()), 
+                    static_cast<float>(p.position_cart.z()), 
+                    static_cast<float>(p.snr_db), 
+                    static_cast<float>(p.doppler_velocity) 
+                };
+                file.write(reinterpret_cast<const char*>(data), 5 * sizeof(float));
+            }
+            file.close();
+        }
+
         std::vector<ImuData> loadImuDataVector(const std::string& data_path, const std::string& time_path)
         {
             std::vector<ImuData> imu_vec;

@@ -5,7 +5,7 @@ import os
 # ==========================================
 # CONFIGURATION
 # ==========================================
-RESULTS_DIR = '/home/ajay/work/temp/aspen_run7//results'
+RESULTS_DIR = '/media/ajay/Backup_Plus1/datasets/coloradar/kitti/2_28_2021_outdoors_run7/results'
 CSV_PATH = os.path.join(RESULTS_DIR, 'ablation_summary.csv')
 
 def generate_detailed_plots():

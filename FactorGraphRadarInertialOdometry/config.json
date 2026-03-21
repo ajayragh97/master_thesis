@@ -1,8 +1,8 @@
 {
     "dataset": {
-        "base_dir": "/media/ajay/Backup_Plus1/datasets/coloradar/kitti/2_23_2021_edgar_army_run1/",
+        "base_dir": "/home/ajay/work/temp/aspen_run7/",
         "calib_dir": "/home/ajay/work/temp/calib",
-        "output_filename": "results/pure_imu/skip_blind",
+        "output_filename": "results/reve_imu/skip_50",
         "static_duration": 0.1,
         "sensor": "single_chip"
     },
@@ -41,12 +41,12 @@
     },
     "graph": {
         "use_2d_mode": false,
-        "use_reve_factor": false,
+        "use_reve_factor": true,
         "use_icp_factor": false,
-        "use_gt_prior": false,
+        "use_gt_prior": true,
         "gravity": 9.81,
         "keyframe_rate": 50.0,
-        "gt_skip_rate": 100000,
+        "gt_skip_rate": 50,
         "update_rate": 10,
         "noise": {
             "accel_sigma": 0.01,
