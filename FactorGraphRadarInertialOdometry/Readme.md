@@ -1,4 +1,3 @@
-```markdown
 # Factor Graph Radar-Inertial Odometry (FG-RIO)
 
 A robust, multi-sensor fusion pipeline for 4D Radar and IMU odometry using Factor Graph Optimization. This project estimates 6-DoF vehicle states by fusing Doppler-derived ego-velocity, radar intensity weighted scan matching (ICP), and IMU preintegration.
@@ -198,4 +197,3 @@ This project utilizes the following open-source libraries:
 ```
 ---
 *Developed for research in Radar-Inertial Fusion and GPS-denied Navigation.*
-```
