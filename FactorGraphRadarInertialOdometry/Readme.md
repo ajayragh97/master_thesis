@@ -20,7 +20,7 @@ graph TD
     classDef sensor fill:#e3f2fd,stroke:#1f77b4,stroke-width:2px,color:#000
     classDef frontend fill:#e8f5e9,stroke:#2ca02c,stroke-width:2px,color:#000
     classDef factor fill:#fff3e0,stroke:#f57c00,stroke-width:2px,shape:rect,color:#000
-    classDef state fill:#f3e5f5,stroke:#d81b60,stroke-width:2px,shape:circle,color:#000
+    classDef state fill:#f3e5f5,stroke:#d81b60,stroke-width:5px,shape:circle,color:#000
 
     subgraph SENSORS [1. Sensor Data Streams]
         IMU[IMU Stream <br> High Freq: ~100-400 Hz]:::sensor
