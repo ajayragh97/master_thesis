@@ -40,8 +40,8 @@ graph TD
         direction LR
         
         %% State Nodes
-        NodePrev(( Node i-1 <br><br> Pose X<br>Velocity V<br>Bias B )):::state
-        NodeCurr(( Node i <br><br> Pose X<br>Velocity V<br>Bias B )):::state
+        NodePrev(( Node i-1 <br>Pose X<br>Velocity V<br>Bias B )):::state
+        NodeCurr(( Node i <br>Pose X<br>Velocity V<br>Bias B )):::state
 
         %% Factors
         Fac_IMU[ImuFactor & <br> Bias RW Factor]:::factor
