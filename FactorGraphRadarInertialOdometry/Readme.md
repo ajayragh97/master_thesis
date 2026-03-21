@@ -12,6 +12,67 @@ A robust, multi-sensor fusion pipeline for 4D Radar and IMU odometry using Facto
 
 ---
 
+## Architecture
+
+graph TD
+    %% Styling definitions
+    classDef sensor fill:#e3f2fd,stroke:#1f77b4,stroke-width:2px,color:#000
+    classDef frontend fill:#e8f5e9,stroke:#2ca02c,stroke-width:2px,color:#000
+    classDef factor fill:#fff3e0,stroke:#f57c00,stroke-width:2px,shape:rect,color:#000
+    classDef state fill:#f3e5f5,stroke:#d81b60,stroke-width:2px,shape:circle,color:#000
+
+    subgraph SENSORS [1. Sensor Data Streams]
+        IMU[IMU Stream <br> High Freq: ~100-400 Hz]:::sensor
+        RADAR[Radar Pointclouds <br> Low Freq: ~10-20 Hz]:::sensor
+        GPS[Ground Truth / GPS <br> Absolute Poses]:::sensor
+    end
+
+    subgraph FRONTEND [2. Frontend Signal Processing]
+        PREINT[IMU Preintegrator <br> Integrates IMU over dt = 1/keyframe_rate]:::frontend
+        REVE[REVE Estimator <br> RANSAC Doppler Velocity]:::frontend
+        FILTER[Dynamic Point Filter <br> Removes moving targets using REVE]:::frontend
+        ICP[Radar ICP <br> Weighted SVD Registration]:::frontend
+        SKIP[GT Subsampler <br> Evaluates gt_skip_rate]:::frontend
+    end
+
+    subgraph BACKEND [3. GTSAM Factor Graph Backend & ISAM2 Optimizer]
+        direction LR
+        
+        %% State Nodes
+        NodePrev(( Node i-1 <br><br> Pose X<br>Velocity V<br>Bias B )):::state
+        NodeCurr(( Node i <br><br> Pose X<br>Velocity V<br>Bias B )):::state
+
+        %% Factors
+        Fac_IMU[ImuFactor & <br> Bias RW Factor]:::factor
+        Fac_ICP[BetweenFactor <br> Pose3]:::factor
+        Fac_REVE[RadarVelocityFactor <br> Custom Unary]:::factor
+        Fac_GT[PriorFactor <br> Pose3]:::factor
+
+        %% Graph Connections
+        NodePrev ===>|State at t-1| Fac_IMU ===>|Predicts| NodeCurr
+        NodePrev --->|Static Cloud t-1| Fac_ICP --->|Delta Pose| NodeCurr
+        
+        Fac_REVE --->|Body Velocity| NodeCurr
+        Fac_GT -.->|Anchor / Correction| NodeCurr
+    end
+
+    %% Data Flow Connections
+    IMU --> PREINT
+    RADAR --> REVE
+    RADAR --> FILTER
+    REVE -->|Ego-Velocity| FILTER
+    FILTER -->|Static Cloud t| ICP
+    FILTER -.->|Static Cloud t-1| ICP
+    GPS --> SKIP
+
+    PREINT ==>|Preintegrated NavState| Fac_IMU
+    ICP --->|Transform Matrix| Fac_ICP
+    REVE --->|Linear Velocity| Fac_REVE
+    SKIP -.->|If frame % skip_rate == 0| Fac_GT
+
+
+---
+
 ## 📊 Evaluation & Results
 
 ### 1. Ablation Study & Robustness Analysis
